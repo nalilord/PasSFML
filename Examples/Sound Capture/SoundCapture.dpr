@@ -67,8 +67,7 @@ begin
   else
   begin
     // Create a sound instance and play it
-    Sound := TSfmlSound.Create;
-    Sound.SetBuffer(Buffer);
+    Sound := TSfmlSound.Create(Buffer);
     Sound.Play;
 
     // Wait until finished

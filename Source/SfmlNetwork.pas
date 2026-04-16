@@ -33,9 +33,9 @@ uses
 
 const
 {$IF Defined(MSWINDOWS)}
-  CSfmlNetworkLibrary = 'csfml-network-2.dll';
+  CSfmlNetworkLibrary = 'csfml-network-3.dll';
 {$ELSEIF Defined(DARWIN) or Defined(MACOS)}
-  CSfmlNetworkLibrary = 'csfml-network-2.dylib';
+  CSfmlNetworkLibrary = 'csfml-network-3.dylib';
 {$ELSEIF Defined(UNIX)}
   CSfmlNetworkLibrary = 'csfml-network.so';
 {$IFEND}
@@ -782,6 +782,8 @@ type
     property LocalPort: Word read GetLocalPort;
   end;
 
+  TSfmlTcpSocket = class;
+
   TSfmlTcpListener = class(TSfmlSocket)
   private
     FHandle: PSfmlTcpListener;
@@ -794,7 +796,8 @@ type
     destructor Destroy; override;
 
     function Listen(Port: Word; Address: TSfmlIpAddress): TSfmlSocketStatus;
-    function Accept(out Connected: PSfmlTcpSocket): TSfmlSocketStatus;
+    function Accept(out Connected: PSfmlTcpSocket): TSfmlSocketStatus; overload;
+    function Accept(out Connected: TSfmlTcpSocket): TSfmlSocketStatus; overload;
 
     property Handle: PSfmlTcpListener read FHandle;
   end;
@@ -808,6 +811,7 @@ type
     function GetLocalPort: Word; override;
   public
     constructor Create; override;
+    constructor CreateFromHandle(Handle: PSfmlTcpSocket);
     destructor Destroy; override;
 
     function GetRemoteAddress: TSfmlIpAddress;
@@ -1432,6 +1436,19 @@ begin
   Result := SfmlTcpListenerAccept(FHandle, Connected);
 end;
 
+function TSfmlTcpListener.Accept(
+  out Connected: TSfmlTcpSocket): TSfmlSocketStatus;
+var
+  Handle: PSfmlTcpSocket;
+begin
+  Handle := nil;
+  Result := Accept(Handle);
+  if Result = sfSocketDone then
+    Connected := TSfmlTcpSocket.CreateFromHandle(Handle)
+  else
+    Connected := nil;
+end;
+
 function TSfmlTcpListener.GetLocalPort: Word;
 begin
   Result := SfmlTcpListenerGetLocalPort(FHandle);
@@ -1458,6 +1475,11 @@ end;
 constructor TSfmlTcpSocket.Create;
 begin
   FHandle := SfmlTcpSocketCreate;
+end;
+
+constructor TSfmlTcpSocket.CreateFromHandle(Handle: PSfmlTcpSocket);
+begin
+  FHandle := Handle;
 end;
 
 destructor TSfmlTcpSocket.Destroy;

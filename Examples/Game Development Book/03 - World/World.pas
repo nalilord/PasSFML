@@ -117,7 +117,8 @@ begin
 
   // Prepare the tiled background
   Texture := FTextures.Get(tiDesert);
-  TextureRect := FWorldBounds;
+  TextureRect := SfmlIntRect(Round(FWorldBounds.Left), Round(FWorldBounds.Top),
+    Round(FWorldBounds.Width), Round(FWorldBounds.Height));
   Texture.Repeated := True;
 
   // Add the background sprite to the scene

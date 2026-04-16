@@ -36,17 +36,17 @@ implementation
 
 constructor TGame.Create;
 begin
-  FWindow := TSfmlRenderWindow.Create(SfmlVideoMode(640, 480), 'World', [sfClose]);
+  FWindow := TSfmlRenderWindow.Create(SfmlVideoMode(640, 480), 'World', sfClose, sfWindowed);
   FWorld := TWorld.Create(FWindow);
   FStatisticsUpdateTime.MicroSeconds := 0;
   FStatisticsNumFrames := 0;
 
   FFont := TSfmlFont.Create('../Resources/Sansation.ttf');
 
-  FStatisticsText := TSfmlText.Create;
-  FStatisticsText.Font := FFont.Handle;
+  FStatisticsText := TSfmlText.Create(FFont);
   FStatisticsText.Position := SfmlVector2f(5, 5);
   FStatisticsText.CharacterSize := 10;
+  FStatisticsText.FillColor := SfmlWhite;
 end;
 
 procedure TGame.Run;
@@ -61,10 +61,10 @@ begin
     while FWindow.isOpen do
     begin
       ElapsedTime := Clock.Restart;
-      TimeSinceLastUpdate := TimeSinceLastUpdate + ElapsedTime;
+      TimeSinceLastUpdate.MicroSeconds := TimeSinceLastUpdate.MicroSeconds + ElapsedTime.MicroSeconds;
       while TimeSinceLastUpdate.MicroSeconds > TimePerFrame.MicroSeconds do
       begin
-        TimeSinceLastUpdate := TimeSinceLastUpdate - TimePerFrame;
+        TimeSinceLastUpdate.MicroSeconds := TimeSinceLastUpdate.MicroSeconds - TimePerFrame.MicroSeconds;
 
         ProcessEvents;
         Update(TimePerFrame);
@@ -123,7 +123,7 @@ end;
 
 procedure TGame.UpdateStatistics(ElapsedTime: TSfmlTime);
 begin
-  FStatisticsUpdateTime := FStatisticsUpdateTime + ElapsedTime;
+  FStatisticsUpdateTime.MicroSeconds := FStatisticsUpdateTime.MicroSeconds + ElapsedTime.MicroSeconds;
   FStatisticsNumFrames := FStatisticsNumFrames + 1;
 
   if FStatisticsUpdateTime.MicroSeconds >= SfmlSeconds(1.0).MicroSeconds then
@@ -132,7 +132,7 @@ begin
       'Frames / Second = ' + AnsiString(IntToStr(FStatisticsNumFrames)) + #10 +
       'Time / Update = ' + AnsiString(FloatToStr(FStatisticsUpdateTime.Microseconds / FStatisticsNumFrames)) + 'us';
 
-    FStatisticsUpdateTime := FStatisticsUpdateTime - Sfmlseconds(1);
+    FStatisticsUpdateTime.MicroSeconds := FStatisticsUpdateTime.MicroSeconds - SfmlSeconds(1).MicroSeconds;
     FStatisticsNumFrames := 0;
   end;
 end;

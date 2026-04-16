@@ -55,3 +55,9 @@ __history/
 
 # Castalia statistics file
 *.stat
+
+# Misc
+*.c*/*
+*.sh
+*-src
+Native

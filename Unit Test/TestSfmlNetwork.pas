@@ -664,7 +664,7 @@ procedure TestTSfmlTcpListener.TestListen;
 var
   ReturnValue: TSfmlSocketStatus;
 begin
-  ReturnValue := FSfmlTcpListener.Listen(80);
+  ReturnValue := FSfmlTcpListener.Listen(80, SfmlIpAddressAny);
   CheckTrue(ReturnValue <> sfSocketError);
   // TODO: check return values
 end;
@@ -803,7 +803,7 @@ procedure TestTSfmlUdpSocket.TestBindUnbind;
 var
   ReturnValue: TSfmlSocketStatus;
 begin
-  ReturnValue := FSfmlUdpSocket.Bind(123);
+  ReturnValue := FSfmlUdpSocket.Bind(123, SfmlIpAddressAny);
   CheckTrue(ReturnValue <> sfSocketError);
   FSfmlUdpSocket.Unbind;
 end;
@@ -829,7 +829,7 @@ end;
 procedure TestTSfmlUdpSocket.TestReceive;
 var
   ReturnValue: TSfmlSocketStatus;
-  Port: Byte;
+  Port: Word;
   Address: TSfmlIpAddress;
   SizeReceived: NativeUInt;
   MaxSize: NativeUInt;
@@ -866,7 +866,7 @@ end;
 procedure TestTSfmlUdpSocket.TestReceivePacket;
 var
   ReturnValue: TSfmlSocketStatus;
-  Port: Byte;
+  Port: Word;
   Address: TSfmlIpAddress;
   Packet: TSfmlPacket;
 begin

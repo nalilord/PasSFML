@@ -65,7 +65,7 @@ type
 constructor TPixelate.Create;
 begin
   inherited Create('Pixelate');
-  FSprite := TSfmlSprite.Create;
+  FSprite := TSfmlSprite.Create(PSfmlTexture(nil));
 end;
 
 procedure TPixelate.OnDraw(Target: TSfmlRenderTarget;
@@ -80,7 +80,7 @@ begin
   // Load the texture and initialize the sprite
   Assert(FileExists('../Resources/OncaPintada.jpg'));
   FTexture := TSfmlTexture.Create('../Resources/OncaPintada.jpg');
-  FSprite.SetTexture(FTexture);
+  FSprite := TSfmlSprite.Create(FTexture);
 
   // Load the Shader
   Assert(FileExists('../Resources/Pixelate.frag'));
@@ -101,7 +101,6 @@ end;
 constructor TWaveBlur.Create;
 begin
   inherited Create('Wave + Blur');
-  FText := TSfmlText.Create;
 end;
 
 procedure TWaveBlur.OnDraw(Target: TSfmlRenderTarget;
@@ -113,6 +112,8 @@ end;
 
 function TWaveBlur.OnLoad: Boolean;
 begin
+  FText := TSfmlText.Create(Font);
+
   // Create the text
   FText.&String := 'Praesent suscipit augue in velit pulvinar hendrerit varius purus aliquam.'#10 +
     'Mauris mi odio, bibendum quis fringilla a, laoreet vel orci. Proin vitae vulputate tortor.'#10 +
@@ -132,7 +133,6 @@ begin
     'Mauris ultricies dolor sed massa convallis sed aliquet augue fringilla.'#10 +
     'Duis erat eros, porta in accumsan in, blandit quis sem.'#10 +
     'In hac habitasse platea dictumst. Etiam fringilla est id odio dapibus sit amet semper dui laoreet.'#10;
-  FText.Font := Font.Handle;
   FText.CharacterSize := 22;
   FText.Position := SfmlVector2f(30, 20);
 
@@ -208,7 +208,6 @@ end;
 constructor TEdge.Create;
 begin
   inherited Create('Edge Post-Effect');
-  FBackgroundSprite := TSfmlSprite.Create;
 end;
 
 procedure TEdge.OnDraw(Target: TSfmlRenderTarget; States: PSfmlRenderStates);
@@ -228,9 +227,12 @@ function TEdge.OnLoad: Boolean;
 var
   Index: Integer;
   Entity: TSfmlSprite;
+  SurfaceSize: TSfmlVector2u;
 begin
   // Create the off-screen surface
-  FSurface := TSfmlRenderTexture.Create(800, 600, False);
+  SurfaceSize.X := 800;
+  SurfaceSize.Y := 600;
+  FSurface := TSfmlRenderTexture.Create(SurfaceSize);
   FSurface.Smooth := True;
 
   // Load the textures
@@ -242,7 +244,7 @@ begin
   FEntityTexture.Smooth := True;
 
   // Initialize the background sprite
-  FBackgroundSprite.SetTexture(FBackgroundTexture);
+  FBackgroundSprite := TSfmlSprite.Create(FBackgroundTexture);
   FBackgroundSprite.Position := SfmlVector2f(135, 100);
 
   // Load the moving entities
@@ -302,7 +304,7 @@ begin
 
   // Create the main Window
   Window := TSfmlRenderWindow.Create(SfmlVideoMode(800, 600), 'SFML Shader',
-    [sfTitleBar, sfClose]);
+    sfTitleBar or sfClose, sfWindowed);
   Window.SetVerticalSyncEnabled(true);
 
   // Load the application font and pass it to the Effect class
@@ -327,20 +329,19 @@ begin
   Assert(FileExists('../Resources/Text-Background.png'));
   TextBackgroundTexture := TSfmlTexture.Create('../Resources/Text-Background.png');
 
-  TextBackground := TSfmlSprite.Create;
-  TextBackground.SetTexture(TextBackgroundTexture);
+  TextBackground := TSfmlSprite.Create(TextBackgroundTexture);
   TextBackground.Position := SfmlVector2f(0, 520);
   TextBackground.Color := SfmlColorFromRGBA(255, 255, 255, 200);
 
   // Create the description text
   Description := TSfmlText.Create('Current effect: ' + Effects[Current].Name, Font, 20);
   Description.Position := SfmlVector2f(10, 530);
-  Description.Color := SfmlColorFromRGB(80, 80, 80);
+  Description.FillColor := SfmlColorFromRGB(80, 80, 80);
 
   // Create the instructions text
   Instructions := TSfmlText.Create('Press left and right arrows to change the current shader', Font, 20);
   Instructions.Position := SfmlVector2f(280, 555);
-  Instructions.Color := SfmlColorFromRGB(80, 80, 80);
+  Instructions.FillColor := SfmlColorFromRGB(80, 80, 80);
 
   // Start the game loop
   Clock := TSfmlClock.Create;

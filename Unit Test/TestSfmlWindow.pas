@@ -38,7 +38,7 @@ implementation
 procedure TestTSfmlWindow.SetUp;
 begin
   FSfmlWindow := TSfmlWindow.Create(SfmlVideoMode(800, 600),
-    'Test', [sfTitleBar, sfResize, sfClose]);
+    'Test', sfTitleBar or sfResize or sfClose, sfWindowed);
 end;
 
 procedure TestTSfmlWindow.TearDown;
@@ -95,7 +95,7 @@ begin
     FSfmlWindow.Display;
 
     // wait for event
-    if FSfmlWindow.WaitEvent(Event) then
+    if FSfmlWindow.WaitEvent(SfmlMilliseconds(100), Event) then
       if Event.EventType = sfEvtClosed then
         Break
   end;
@@ -116,7 +116,7 @@ begin
     FSfmlWindow.Display;
 
     // wait for event
-    if FSfmlWindow.WaitEvent(Event) then
+    if FSfmlWindow.WaitEvent(SfmlMilliseconds(100), Event) then
       if Event.EventType = sfEvtClosed then
         Break
   end;

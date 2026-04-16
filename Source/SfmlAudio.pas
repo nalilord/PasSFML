@@ -33,9 +33,9 @@ uses
 
 const
 {$IF Defined(MSWINDOWS)}
-  CSfmlAudioLibrary = 'csfml-audio-2.dll';
+  CSfmlAudioLibrary = 'csfml-audio-3.dll';
 {$ELSEIF Defined(DARWIN) or Defined(MACOS)}
-  CSfmlAudioLibrary = 'csfml-audio-2.dylib';
+  CSfmlAudioLibrary = 'csfml-audio-3.dylib';
 {$ELSEIF Defined(UNIX)}
   CSfmlAudioLibrary = 'csfml-audio.so';
 {$IFEND}
@@ -59,6 +59,33 @@ type
 
   TSfmlSoundStatus = (sfStopped, sfPaused, sfPlaying);
 
+  TSfmlSoundSourceCone = record
+    InnerAngle: Single;
+    OuterAngle: Single;
+    OuterGain: Single;
+  end;
+
+  TSfmlEffectProcessor = procedure (const InputFrames: PSingle;
+    var InputFrameCount: Cardinal; OutputFrames: PSingle;
+    var OutputFrameCount: Cardinal; FrameChannelCount: Cardinal); cdecl;
+
+  TSfmlSoundChannel = (sfSoundChannelUnspecified, sfSoundChannelMono,
+    sfSoundChannelFrontLeft, sfSoundChannelFrontRight,
+    sfSoundChannelFrontCenter, sfSoundChannelFrontLeftOfCenter,
+    sfSoundChannelFrontRightOfCenter, sfSoundChannelLowFrequencyEffects,
+    sfSoundChannelBackLeft, sfSoundChannelBackRight,
+    sfSoundChannelBackCenter, sfSoundChannelSideLeft,
+    sfSoundChannelSideRight, sfSoundChannelTopCenter,
+    sfSoundChannelTopFrontLeft, sfSoundChannelTopFrontRight,
+    sfSoundChannelTopFrontCenter, sfSoundChannelTopBackLeft,
+    sfSoundChannelTopBackRight, sfSoundChannelTopBackCenter);
+  PSfmlSoundChannel = ^TSfmlSoundChannel;
+
+  TSfmlTimeSpan = record
+    Offset: TSfmlTime;
+    Length: TSfmlTime;
+  end;
+
   TSfmlSoundStreamChunk = record
     Samples: PSmallInt;
     SampleCount: Cardinal;
@@ -81,13 +108,17 @@ type
   TSfmlListenerGetDirection = function : TSfmlVector3f; cdecl;
   TSfmlListenerSetUpVector = procedure (UpVector: TSfmlVector3f); cdecl;
   TSfmlListenerGetUpVector = function : TSfmlVector3f; cdecl;
+  TSfmlListenerSetVelocity = procedure (Velocity: TSfmlVector3f); cdecl;
+  TSfmlListenerGetVelocity = function : TSfmlVector3f; cdecl;
+  TSfmlListenerSetCone = procedure (Cone: TSfmlSoundSourceCone); cdecl;
+  TSfmlListenerGetCone = function : TSfmlSoundSourceCone; cdecl;
 
   TSfmlMusicCreateFromFile = function (const FileName: PAnsiChar): PSfmlMusic; cdecl;
   TSfmlMusicCreateFromMemory = function (const Data: Pointer; SizeInBytes: NativeUInt): PSfmlMusic; cdecl;
   TSfmlMusicCreateFromStream = function (Stream: PSfmlInputStream): PSfmlMusic; cdecl;
   TSfmlMusicDestroy = procedure (Music: PSfmlMusic); cdecl;
-  TSfmlMusicSetLoop = procedure (Music: PSfmlMusic; Loop: LongBool); cdecl;
-  TSfmlMusicGetLoop = function (const Music: PSfmlMusic): LongBool; cdecl;
+  TSfmlMusicSetLooping = procedure (Music: PSfmlMusic; Loop: LongBool); cdecl;
+  TSfmlMusicIsLooping = function (const Music: PSfmlMusic): LongBool; cdecl;
   TSfmlMusicGetDuration = function (const Music: PSfmlMusic): TSfmlTime; cdecl;
   TSfmlMusicPlay = procedure (Music: PSfmlMusic); cdecl;
   TSfmlMusicPause = procedure (Music: PSfmlMusic); cdecl;
@@ -109,8 +140,32 @@ type
   TSfmlMusicIsRelativeToListener = function (const Music: PSfmlMusic): LongBool; cdecl;
   TSfmlMusicGetMinDistance = function (const Music: PSfmlMusic): Single; cdecl;
   TSfmlMusicGetAttenuation = function (const Music: PSfmlMusic): Single; cdecl;
+  TSfmlMusicSetPan = procedure (Music: PSfmlMusic; Pan: Single); cdecl;
+  TSfmlMusicGetPan = function (const Music: PSfmlMusic): Single; cdecl;
+  TSfmlMusicSetSpatializationEnabled = procedure (Music: PSfmlMusic; Enabled: LongBool); cdecl;
+  TSfmlMusicIsSpatializationEnabled = function (const Music: PSfmlMusic): LongBool; cdecl;
+  TSfmlMusicSetDirection = procedure (Music: PSfmlMusic; Direction: TSfmlVector3f); cdecl;
+  TSfmlMusicGetDirection = function (const Music: PSfmlMusic): TSfmlVector3f; cdecl;
+  TSfmlMusicSetCone = procedure (Music: PSfmlMusic; Cone: TSfmlSoundSourceCone); cdecl;
+  TSfmlMusicGetCone = function (const Music: PSfmlMusic): TSfmlSoundSourceCone; cdecl;
+  TSfmlMusicSetVelocity = procedure (Music: PSfmlMusic; Velocity: TSfmlVector3f); cdecl;
+  TSfmlMusicGetVelocity = function (const Music: PSfmlMusic): TSfmlVector3f; cdecl;
+  TSfmlMusicSetDopplerFactor = procedure (Music: PSfmlMusic; Factor: Single); cdecl;
+  TSfmlMusicGetDopplerFactor = function (const Music: PSfmlMusic): Single; cdecl;
+  TSfmlMusicSetDirectionalAttenuationFactor = procedure (Music: PSfmlMusic; Factor: Single); cdecl;
+  TSfmlMusicGetDirectionalAttenuationFactor = function (const Music: PSfmlMusic): Single; cdecl;
+  TSfmlMusicSetMaxDistance = procedure (Music: PSfmlMusic; Distance: Single); cdecl;
+  TSfmlMusicGetMaxDistance = function (const Music: PSfmlMusic): Single; cdecl;
+  TSfmlMusicSetMinGain = procedure (Music: PSfmlMusic; Gain: Single); cdecl;
+  TSfmlMusicGetMinGain = function (const Music: PSfmlMusic): Single; cdecl;
+  TSfmlMusicSetMaxGain = procedure (Music: PSfmlMusic; Gain: Single); cdecl;
+  TSfmlMusicGetMaxGain = function (const Music: PSfmlMusic): Single; cdecl;
+  TSfmlMusicSetEffectProcessor = procedure (Music: PSfmlMusic; EffectProcessor: TSfmlEffectProcessor); cdecl;
+  TSfmlMusicGetChannelMap = function (const Music: PSfmlMusic; Count: PNativeUInt): PSfmlSoundChannel; cdecl;
+  TSfmlMusicGetLoopPoints = function (const Music: PSfmlMusic): TSfmlTimeSpan; cdecl;
+  TSfmlMusicSetLoopPoints = procedure (Music: PSfmlMusic; TimePoints: TSfmlTimeSpan); cdecl;
 
-  TSfmlSoundStreamCreate = function (OnGetData: TSfmlSoundStreamGetDataCallback; OnSeek: TSfmlSoundStreamSeekCallback; ChannelCount, SampleRate: Cardinal; UserData: Pointer): PSfmlSoundStream; cdecl;
+  TSfmlSoundStreamCreate = function (OnGetData: TSfmlSoundStreamGetDataCallback; OnSeek: TSfmlSoundStreamSeekCallback; ChannelCount, SampleRate: Cardinal; ChannelMapData: PSfmlSoundChannel; ChannelMapSize: NativeUInt; UserData: Pointer): PSfmlSoundStream; cdecl;
   TSfmlSoundStreamDestroy = procedure (SoundStream: PSfmlSoundStream); cdecl;
   TSfmlSoundStreamPlay = procedure (SoundStream: PSfmlSoundStream); cdecl;
   TSfmlSoundStreamPause = procedure (SoundStream: PSfmlSoundStream); cdecl;
@@ -125,17 +180,39 @@ type
   TSfmlSoundStreamSetMinDistance = procedure (SoundStream: PSfmlSoundStream; Distance: Single); cdecl;
   TSfmlSoundStreamSetAttenuation = procedure (SoundStream: PSfmlSoundStream; Attenuation: Single); cdecl;
   TSfmlSoundStreamSetPlayingOffset = procedure (SoundStream: PSfmlSoundStream; TimeOffset: TSfmlTime); cdecl;
-  TSfmlSoundStreamSetLoop = procedure (SoundStream: PSfmlSoundStream; Loop: LongBool); cdecl;
+  TSfmlSoundStreamSetLooping = procedure (SoundStream: PSfmlSoundStream; Loop: LongBool); cdecl;
   TSfmlSoundStreamGetPitch = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
   TSfmlSoundStreamGetVolume = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
   TSfmlSoundStreamGetPosition = function (const SoundStream: PSfmlSoundStream): TSfmlVector3f; cdecl;
   TSfmlSoundStreamIsRelativeToListener = function (const SoundStream: PSfmlSoundStream): LongBool; cdecl;
   TSfmlSoundStreamGetMinDistance = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
   TSfmlSoundStreamGetAttenuation = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
-  TSfmlSoundStreamGetLoop = function (const SoundStream: PSfmlSoundStream): LongBool; cdecl;
+  TSfmlSoundStreamIsLooping = function (const SoundStream: PSfmlSoundStream): LongBool; cdecl;
   TSfmlSoundStreamGetPlayingOffset = function (const SoundStream: PSfmlSoundStream): TSfmlTime; cdecl;
+  TSfmlSoundStreamGetChannelMap = function (const SoundStream: PSfmlSoundStream; Count: PNativeUInt): PSfmlSoundChannel; cdecl;
+  TSfmlSoundStreamSetPan = procedure (SoundStream: PSfmlSoundStream; Pan: Single); cdecl;
+  TSfmlSoundStreamGetPan = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
+  TSfmlSoundStreamSetSpatializationEnabled = procedure (SoundStream: PSfmlSoundStream; Enabled: LongBool); cdecl;
+  TSfmlSoundStreamIsSpatializationEnabled = function (const SoundStream: PSfmlSoundStream): LongBool; cdecl;
+  TSfmlSoundStreamSetDirection = procedure (SoundStream: PSfmlSoundStream; Direction: TSfmlVector3f); cdecl;
+  TSfmlSoundStreamGetDirection = function (const SoundStream: PSfmlSoundStream): TSfmlVector3f; cdecl;
+  TSfmlSoundStreamSetCone = procedure (SoundStream: PSfmlSoundStream; Cone: TSfmlSoundSourceCone); cdecl;
+  TSfmlSoundStreamGetCone = function (const SoundStream: PSfmlSoundStream): TSfmlSoundSourceCone; cdecl;
+  TSfmlSoundStreamSetVelocity = procedure (SoundStream: PSfmlSoundStream; Velocity: TSfmlVector3f); cdecl;
+  TSfmlSoundStreamGetVelocity = function (const SoundStream: PSfmlSoundStream): TSfmlVector3f; cdecl;
+  TSfmlSoundStreamSetDopplerFactor = procedure (SoundStream: PSfmlSoundStream; Factor: Single); cdecl;
+  TSfmlSoundStreamGetDopplerFactor = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
+  TSfmlSoundStreamSetDirectionalAttenuationFactor = procedure (SoundStream: PSfmlSoundStream; Factor: Single); cdecl;
+  TSfmlSoundStreamGetDirectionalAttenuationFactor = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
+  TSfmlSoundStreamSetMaxDistance = procedure (SoundStream: PSfmlSoundStream; Distance: Single); cdecl;
+  TSfmlSoundStreamGetMaxDistance = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
+  TSfmlSoundStreamSetMinGain = procedure (SoundStream: PSfmlSoundStream; Gain: Single); cdecl;
+  TSfmlSoundStreamGetMinGain = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
+  TSfmlSoundStreamSetMaxGain = procedure (SoundStream: PSfmlSoundStream; Gain: Single); cdecl;
+  TSfmlSoundStreamGetMaxGain = function (const SoundStream: PSfmlSoundStream): Single; cdecl;
+  TSfmlSoundStreamSetEffectProcessor = procedure (SoundStream: PSfmlSoundStream; EffectProcessor: TSfmlEffectProcessor); cdecl;
 
-  TSfmlSoundCreate = function : PSfmlSound; cdecl;
+  TSfmlSoundCreate = function (const Buffer: PSfmlSoundBuffer): PSfmlSound; cdecl;
   TSfmlSoundCopy = function (const Sound: PSfmlSound): PSfmlSound; cdecl;
   TSfmlSoundDestroy = procedure (Sound: PSfmlSound); cdecl;
   TSfmlSoundPlay = procedure (Sound: PSfmlSound); cdecl;
@@ -143,8 +220,8 @@ type
   TSfmlSoundStop = procedure (Sound: PSfmlSound); cdecl;
   TSfmlSoundSetBuffer = procedure (Sound: PSfmlSound; const Buffer: PSfmlSoundBuffer); cdecl;
   TSfmlSoundGetBuffer = function (const Sound: PSfmlSound): PSfmlSoundBuffer; cdecl;
-  TSfmlSoundSetLoop = procedure (Sound: PSfmlSound; Loop: LongBool); cdecl;
-  TSfmlSoundGetLoop = function (const Sound: PSfmlSound): LongBool; cdecl;
+  TSfmlSoundSetLooping = procedure (Sound: PSfmlSound; Loop: LongBool); cdecl;
+  TSfmlSoundIsLooping = function (const Sound: PSfmlSound): LongBool; cdecl;
   TSfmlSoundGetStatus = function (const Sound: PSfmlSound): TSfmlSoundStatus; cdecl;
   TSfmlSoundSetPitch = procedure (Sound: PSfmlSound; Pitch: Single); cdecl;
   TSfmlSoundSetVolume = procedure (Sound: PSfmlSound; Volume: Single); cdecl;
@@ -160,6 +237,27 @@ type
   TSfmlSoundGetMinDistance = function (const Sound: PSfmlSound): Single; cdecl;
   TSfmlSoundGetAttenuation = function (const Sound: PSfmlSound): Single; cdecl;
   TSfmlSoundGetPlayingOffset = function (const Sound: PSfmlSound): TSfmlTime; cdecl;
+  TSfmlSoundSetPan = procedure (Sound: PSfmlSound; Pan: Single); cdecl;
+  TSfmlSoundGetPan = function (const Sound: PSfmlSound): Single; cdecl;
+  TSfmlSoundSetSpatializationEnabled = procedure (Sound: PSfmlSound; Enabled: LongBool); cdecl;
+  TSfmlSoundIsSpatializationEnabled = function (const Sound: PSfmlSound): LongBool; cdecl;
+  TSfmlSoundSetDirection = procedure (Sound: PSfmlSound; Direction: TSfmlVector3f); cdecl;
+  TSfmlSoundGetDirection = function (const Sound: PSfmlSound): TSfmlVector3f; cdecl;
+  TSfmlSoundSetCone = procedure (Sound: PSfmlSound; Cone: TSfmlSoundSourceCone); cdecl;
+  TSfmlSoundGetCone = function (const Sound: PSfmlSound): TSfmlSoundSourceCone; cdecl;
+  TSfmlSoundSetVelocity = procedure (Sound: PSfmlSound; Velocity: TSfmlVector3f); cdecl;
+  TSfmlSoundGetVelocity = function (const Sound: PSfmlSound): TSfmlVector3f; cdecl;
+  TSfmlSoundSetDopplerFactor = procedure (Sound: PSfmlSound; Factor: Single); cdecl;
+  TSfmlSoundGetDopplerFactor = function (const Sound: PSfmlSound): Single; cdecl;
+  TSfmlSoundSetDirectionalAttenuationFactor = procedure (Sound: PSfmlSound; Factor: Single); cdecl;
+  TSfmlSoundGetDirectionalAttenuationFactor = function (const Sound: PSfmlSound): Single; cdecl;
+  TSfmlSoundSetMaxDistance = procedure (Sound: PSfmlSound; Distance: Single); cdecl;
+  TSfmlSoundGetMaxDistance = function (const Sound: PSfmlSound): Single; cdecl;
+  TSfmlSoundSetMinGain = procedure (Sound: PSfmlSound; Gain: Single); cdecl;
+  TSfmlSoundGetMinGain = function (const Sound: PSfmlSound): Single; cdecl;
+  TSfmlSoundSetMaxGain = procedure (Sound: PSfmlSound; Gain: Single); cdecl;
+  TSfmlSoundGetMaxGain = function (const Sound: PSfmlSound): Single; cdecl;
+  TSfmlSoundSetEffectProcessor = procedure (Sound: PSfmlSound; EffectProcessor: TSfmlEffectProcessor); cdecl;
 
   TSfmlSoundBufferCreateFromFile = function (const FileName: PAnsiChar): PSfmlSoundBuffer; cdecl;
   TSfmlSoundBufferCreateFromMemory = function (const Data: Pointer; SizeInBytes: NativeUInt): PSfmlSoundBuffer; cdecl;
@@ -189,13 +287,13 @@ type
   TSfmlSoundRecorderStop = procedure (SoundRecorder: PSfmlSoundRecorder); cdecl;
   TSfmlSoundRecorderGetSampleRate = function (const SoundRecorder: PSfmlSoundRecorder): Cardinal; cdecl;
   TSfmlSoundRecorderIsAvailable = function : LongBool; cdecl;
-  TSfmlSoundRecorderSetProcessingInterval = procedure (SoundRecorder: PSfmlSoundRecorder; Interval: TSfmlTime); cdecl;
   TSfmlSoundRecorderGetAvailableDevices = function (count: PNativeUInt): PPAnsiChar; cdecl;
   TSfmlSoundRecorderGetDefaultDevice = function : PAnsiChar; cdecl;
   TSfmlSoundRecorderSetDevice = function (SoundRecorder: PSfmlSoundRecorder; const Name: PAnsiChar): LongBool; cdecl;
   TSfmlSoundRecorderGetDevice = function (SoundRecorder: PSfmlSoundRecorder): PAnsiChar; cdecl;
   TSfmlSoundRecorderSetChannelCount = function (SoundRecorder: PSfmlSoundRecorder; const ChannelCount: Cardinal): LongBool; cdecl;
   TSfmlSoundRecorderGetChannelCount = function (const SoundRecorder: PSfmlSoundRecorder): Cardinal; cdecl;
+  TSfmlSoundRecorderGetChannelMap = function (const SoundRecorder: PSfmlSoundRecorder; Count: PNativeUInt): PSfmlSoundChannel; cdecl;
 
 var
   SfmlListenerSetGlobalVolume: TSfmlListenerSetGlobalVolume;
@@ -206,13 +304,17 @@ var
   SfmlListenerGetDirection: TSfmlListenerGetDirection;
   SfmlListenerSetUpVector: TSfmlListenerSetUpVector;
   SfmlListenerGetUpVector: TSfmlListenerGetUpVector;
+  SfmlListenerSetVelocity: TSfmlListenerSetVelocity;
+  SfmlListenerGetVelocity: TSfmlListenerGetVelocity;
+  SfmlListenerSetCone: TSfmlListenerSetCone;
+  SfmlListenerGetCone: TSfmlListenerGetCone;
 
   SfmlMusicCreateFromFile: TSfmlMusicCreateFromFile;
   SfmlMusicCreateFromMemory: TSfmlMusicCreateFromMemory;
   SfmlMusicCreateFromStream: TSfmlMusicCreateFromStream;
   SfmlMusicDestroy: TSfmlMusicDestroy;
-  SfmlMusicSetLoop: TSfmlMusicSetLoop;
-  SfmlMusicGetLoop: TSfmlMusicGetLoop;
+  SfmlMusicSetLooping: TSfmlMusicSetLooping;
+  SfmlMusicIsLooping: TSfmlMusicIsLooping;
   SfmlMusicPlay: TSfmlMusicPlay;
   SfmlMusicPause: TSfmlMusicPause;
   SfmlMusicStop: TSfmlMusicStop;
@@ -232,6 +334,30 @@ var
   SfmlMusicIsRelativeToListener: TSfmlMusicIsRelativeToListener;
   SfmlMusicGetMinDistance: TSfmlMusicGetMinDistance;
   SfmlMusicGetAttenuation: TSfmlMusicGetAttenuation;
+  SfmlMusicSetPan: TSfmlMusicSetPan;
+  SfmlMusicGetPan: TSfmlMusicGetPan;
+  SfmlMusicSetSpatializationEnabled: TSfmlMusicSetSpatializationEnabled;
+  SfmlMusicIsSpatializationEnabled: TSfmlMusicIsSpatializationEnabled;
+  SfmlMusicSetDirection: TSfmlMusicSetDirection;
+  SfmlMusicGetDirection: TSfmlMusicGetDirection;
+  SfmlMusicSetCone: TSfmlMusicSetCone;
+  SfmlMusicGetCone: TSfmlMusicGetCone;
+  SfmlMusicSetVelocity: TSfmlMusicSetVelocity;
+  SfmlMusicGetVelocity: TSfmlMusicGetVelocity;
+  SfmlMusicSetDopplerFactor: TSfmlMusicSetDopplerFactor;
+  SfmlMusicGetDopplerFactor: TSfmlMusicGetDopplerFactor;
+  SfmlMusicSetDirectionalAttenuationFactor: TSfmlMusicSetDirectionalAttenuationFactor;
+  SfmlMusicGetDirectionalAttenuationFactor: TSfmlMusicGetDirectionalAttenuationFactor;
+  SfmlMusicSetMaxDistance: TSfmlMusicSetMaxDistance;
+  SfmlMusicGetMaxDistance: TSfmlMusicGetMaxDistance;
+  SfmlMusicSetMinGain: TSfmlMusicSetMinGain;
+  SfmlMusicGetMinGain: TSfmlMusicGetMinGain;
+  SfmlMusicSetMaxGain: TSfmlMusicSetMaxGain;
+  SfmlMusicGetMaxGain: TSfmlMusicGetMaxGain;
+  SfmlMusicSetEffectProcessor: TSfmlMusicSetEffectProcessor;
+  SfmlMusicGetChannelMap: TSfmlMusicGetChannelMap;
+  SfmlMusicGetLoopPoints: TSfmlMusicGetLoopPoints;
+  SfmlMusicSetLoopPoints: TSfmlMusicSetLoopPoints;
 
   SfmlSoundStreamCreate: TSfmlSoundStreamCreate;
   SfmlSoundStreamDestroy: TSfmlSoundStreamDestroy;
@@ -248,14 +374,36 @@ var
   SfmlSoundStreamSetMinDistance: TSfmlSoundStreamSetMinDistance;
   SfmlSoundStreamSetAttenuation: TSfmlSoundStreamSetAttenuation;
   SfmlSoundStreamSetPlayingOffset: TSfmlSoundStreamSetPlayingOffset;
-  SfmlSoundStreamSetLoop: TSfmlSoundStreamSetLoop;
+  SfmlSoundStreamSetLooping: TSfmlSoundStreamSetLooping;
   SfmlSoundStreamGetPitch: TSfmlSoundStreamGetPitch;
   SfmlSoundStreamGetVolume: TSfmlSoundStreamGetVolume;
   SfmlSoundStreamGetPosition: TSfmlSoundStreamGetPosition;
   SfmlSoundStreamIsRelativeToListener: TSfmlSoundStreamIsRelativeToListener;
   SfmlSoundStreamGetMinDistance: TSfmlSoundStreamGetMinDistance;
   SfmlSoundStreamGetAttenuation: TSfmlSoundStreamGetAttenuation;
-  SfmlSoundStreamGetLoop: TSfmlSoundStreamGetLoop;
+  SfmlSoundStreamIsLooping: TSfmlSoundStreamIsLooping;
+  SfmlSoundStreamGetChannelMap: TSfmlSoundStreamGetChannelMap;
+  SfmlSoundStreamSetPan: TSfmlSoundStreamSetPan;
+  SfmlSoundStreamGetPan: TSfmlSoundStreamGetPan;
+  SfmlSoundStreamSetSpatializationEnabled: TSfmlSoundStreamSetSpatializationEnabled;
+  SfmlSoundStreamIsSpatializationEnabled: TSfmlSoundStreamIsSpatializationEnabled;
+  SfmlSoundStreamSetDirection: TSfmlSoundStreamSetDirection;
+  SfmlSoundStreamGetDirection: TSfmlSoundStreamGetDirection;
+  SfmlSoundStreamSetCone: TSfmlSoundStreamSetCone;
+  SfmlSoundStreamGetCone: TSfmlSoundStreamGetCone;
+  SfmlSoundStreamSetVelocity: TSfmlSoundStreamSetVelocity;
+  SfmlSoundStreamGetVelocity: TSfmlSoundStreamGetVelocity;
+  SfmlSoundStreamSetDopplerFactor: TSfmlSoundStreamSetDopplerFactor;
+  SfmlSoundStreamGetDopplerFactor: TSfmlSoundStreamGetDopplerFactor;
+  SfmlSoundStreamSetDirectionalAttenuationFactor: TSfmlSoundStreamSetDirectionalAttenuationFactor;
+  SfmlSoundStreamGetDirectionalAttenuationFactor: TSfmlSoundStreamGetDirectionalAttenuationFactor;
+  SfmlSoundStreamSetMaxDistance: TSfmlSoundStreamSetMaxDistance;
+  SfmlSoundStreamGetMaxDistance: TSfmlSoundStreamGetMaxDistance;
+  SfmlSoundStreamSetMinGain: TSfmlSoundStreamSetMinGain;
+  SfmlSoundStreamGetMinGain: TSfmlSoundStreamGetMinGain;
+  SfmlSoundStreamSetMaxGain: TSfmlSoundStreamSetMaxGain;
+  SfmlSoundStreamGetMaxGain: TSfmlSoundStreamGetMaxGain;
+  SfmlSoundStreamSetEffectProcessor: TSfmlSoundStreamSetEffectProcessor;
 
   SfmlSoundCreate: TSfmlSoundCreate;
   SfmlSoundCopy: TSfmlSoundCopy;
@@ -265,8 +413,8 @@ var
   SfmlSoundStop: TSfmlSoundStop;
   SfmlSoundSetBuffer: TSfmlSoundSetBuffer;
   SfmlSoundGetBuffer: TSfmlSoundGetBuffer;
-  SfmlSoundSetLoop: TSfmlSoundSetLoop;
-  SfmlSoundGetLoop: TSfmlSoundGetLoop;
+  SfmlSoundSetLooping: TSfmlSoundSetLooping;
+  SfmlSoundIsLooping: TSfmlSoundIsLooping;
   SfmlSoundGetStatus: TSfmlSoundGetStatus;
   SfmlSoundSetPitch: TSfmlSoundSetPitch;
   SfmlSoundSetVolume: TSfmlSoundSetVolume;
@@ -281,6 +429,27 @@ var
   SfmlSoundIsRelativeToListener: TSfmlSoundIsRelativeToListener;
   SfmlSoundGetMinDistance: TSfmlSoundGetMinDistance;
   SfmlSoundGetAttenuation: TSfmlSoundGetAttenuation;
+  SfmlSoundSetPan: TSfmlSoundSetPan;
+  SfmlSoundGetPan: TSfmlSoundGetPan;
+  SfmlSoundSetSpatializationEnabled: TSfmlSoundSetSpatializationEnabled;
+  SfmlSoundIsSpatializationEnabled: TSfmlSoundIsSpatializationEnabled;
+  SfmlSoundSetDirection: TSfmlSoundSetDirection;
+  SfmlSoundGetDirection: TSfmlSoundGetDirection;
+  SfmlSoundSetCone: TSfmlSoundSetCone;
+  SfmlSoundGetCone: TSfmlSoundGetCone;
+  SfmlSoundSetVelocity: TSfmlSoundSetVelocity;
+  SfmlSoundGetVelocity: TSfmlSoundGetVelocity;
+  SfmlSoundSetDopplerFactor: TSfmlSoundSetDopplerFactor;
+  SfmlSoundGetDopplerFactor: TSfmlSoundGetDopplerFactor;
+  SfmlSoundSetDirectionalAttenuationFactor: TSfmlSoundSetDirectionalAttenuationFactor;
+  SfmlSoundGetDirectionalAttenuationFactor: TSfmlSoundGetDirectionalAttenuationFactor;
+  SfmlSoundSetMaxDistance: TSfmlSoundSetMaxDistance;
+  SfmlSoundGetMaxDistance: TSfmlSoundGetMaxDistance;
+  SfmlSoundSetMinGain: TSfmlSoundSetMinGain;
+  SfmlSoundGetMinGain: TSfmlSoundGetMinGain;
+  SfmlSoundSetMaxGain: TSfmlSoundSetMaxGain;
+  SfmlSoundGetMaxGain: TSfmlSoundGetMaxGain;
+  SfmlSoundSetEffectProcessor: TSfmlSoundSetEffectProcessor;
 
   SfmlSoundBufferCreateFromFile: TSfmlSoundBufferCreateFromFile;
   SfmlSoundBufferCreateFromMemory: TSfmlSoundBufferCreateFromMemory;
@@ -309,13 +478,13 @@ var
   SfmlSoundRecorderStop: TSfmlSoundRecorderStop;
   SfmlSoundRecorderGetSampleRate: TSfmlSoundRecorderGetSampleRate;
   SfmlSoundRecorderIsAvailable: TSfmlSoundRecorderIsAvailable;
-  SfmlSoundRecorderSetProcessingInterval: TSfmlSoundRecorderSetProcessingInterval;
   SfmlSoundRecorderGetAvailableDevices: TSfmlSoundRecorderGetAvailableDevices;
   SfmlSoundRecorderGetDefaultDevice: TSfmlSoundRecorderGetDefaultDevice;
   SfmlSoundRecorderSetDevice: TSfmlSoundRecorderSetDevice;
   SfmlSoundRecorderGetDevice: TSfmlSoundRecorderGetDevice;
   SfmlSoundRecorderSetChannelCount: TSfmlSoundRecorderSetChannelCount;
   SfmlSoundRecorderGetChannelCount: TSfmlSoundRecorderGetChannelCount;
+  SfmlSoundRecorderGetChannelMap: TSfmlSoundRecorderGetChannelMap;
 
 {$IFNDEF INT64RETURNWORKAROUND}
   SfmlMusicGetDuration: TSfmlMusicGetDuration;
@@ -334,13 +503,17 @@ var
   function SfmlListenerGetDirection: TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfListener_getDirection';
   procedure SfmlListenerSetUpVector(UpVector: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfListener_setUpVector';
   function SfmlListenerGetUpVector: TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfListener_getUpVector';
+  procedure SfmlListenerSetVelocity(Velocity: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfListener_setVelocity';
+  function SfmlListenerGetVelocity: TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfListener_getVelocity';
+  procedure SfmlListenerSetCone(Cone: TSfmlSoundSourceCone); cdecl; external CSfmlAudioLibrary name 'sfListener_setCone';
+  function SfmlListenerGetCone: TSfmlSoundSourceCone; cdecl; external CSfmlAudioLibrary name 'sfListener_getCone';
 
   function SfmlMusicCreateFromFile(const FileName: PAnsiChar): PSfmlMusic; cdecl; external CSfmlAudioLibrary name 'sfMusic_createFromFile';
   function SfmlMusicCreateFromMemory(const data: Pointer; SizeInBytes: NativeUInt): PSfmlMusic; cdecl; external CSfmlAudioLibrary name 'sfMusic_createFromMemory';
   function SfmlMusicCreateFromStream(Stream: PSfmlInputStream): PSfmlMusic; cdecl; external CSfmlAudioLibrary name 'sfMusic_createFromStream';
   procedure SfmlMusicDestroy(Music: PSfmlMusic); cdecl; external CSfmlAudioLibrary name 'sfMusic_destroy';
-  procedure SfmlMusicSetLoop(Music: PSfmlMusic; Loop: LongBool); cdecl; external CSfmlAudioLibrary name 'sfMusic_setLoop';
-  function SfmlMusicGetLoop(const Music: PSfmlMusic): LongBool; cdecl; external CSfmlAudioLibrary name 'sfMusic_getLoop';
+  procedure SfmlMusicSetLooping(Music: PSfmlMusic; Loop: LongBool); cdecl; external CSfmlAudioLibrary name 'sfMusic_setLooping';
+  function SfmlMusicIsLooping(const Music: PSfmlMusic): LongBool; cdecl; external CSfmlAudioLibrary name 'sfMusic_isLooping';
   {$IFNDEF INT64RETURNWORKAROUND}
   function SfmlMusicGetDuration(const Music: PSfmlMusic): TSfmlTime; cdecl; external CSfmlAudioLibrary name 'sfMusic_getDuration';
   {$ENDIF}
@@ -366,8 +539,32 @@ var
   function SfmlMusicIsRelativeToListener(const Music: PSfmlMusic): LongBool; cdecl; external CSfmlAudioLibrary name 'sfMusic_isRelativeToListener';
   function SfmlMusicGetMinDistance(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getMinDistance';
   function SfmlMusicGetAttenuation(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getAttenuation';
+  procedure SfmlMusicSetPan(Music: PSfmlMusic; Pan: Single); cdecl; external CSfmlAudioLibrary name 'sfMusic_setPan';
+  function SfmlMusicGetPan(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getPan';
+  procedure SfmlMusicSetSpatializationEnabled(Music: PSfmlMusic; Enabled: LongBool); cdecl; external CSfmlAudioLibrary name 'sfMusic_setSpatializationEnabled';
+  function SfmlMusicIsSpatializationEnabled(const Music: PSfmlMusic): LongBool; cdecl; external CSfmlAudioLibrary name 'sfMusic_isSpatializationEnabled';
+  procedure SfmlMusicSetDirection(Music: PSfmlMusic; Direction: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfMusic_setDirection';
+  function SfmlMusicGetDirection(const Music: PSfmlMusic): TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfMusic_getDirection';
+  procedure SfmlMusicSetCone(Music: PSfmlMusic; Cone: TSfmlSoundSourceCone); cdecl; external CSfmlAudioLibrary name 'sfMusic_setCone';
+  function SfmlMusicGetCone(const Music: PSfmlMusic): TSfmlSoundSourceCone; cdecl; external CSfmlAudioLibrary name 'sfMusic_getCone';
+  procedure SfmlMusicSetVelocity(Music: PSfmlMusic; Velocity: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfMusic_setVelocity';
+  function SfmlMusicGetVelocity(const Music: PSfmlMusic): TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfMusic_getVelocity';
+  procedure SfmlMusicSetDopplerFactor(Music: PSfmlMusic; Factor: Single); cdecl; external CSfmlAudioLibrary name 'sfMusic_setDopplerFactor';
+  function SfmlMusicGetDopplerFactor(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getDopplerFactor';
+  procedure SfmlMusicSetDirectionalAttenuationFactor(Music: PSfmlMusic; Factor: Single); cdecl; external CSfmlAudioLibrary name 'sfMusic_setDirectionalAttenuationFactor';
+  function SfmlMusicGetDirectionalAttenuationFactor(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getDirectionalAttenuationFactor';
+  procedure SfmlMusicSetMaxDistance(Music: PSfmlMusic; Distance: Single); cdecl; external CSfmlAudioLibrary name 'sfMusic_setMaxDistance';
+  function SfmlMusicGetMaxDistance(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getMaxDistance';
+  procedure SfmlMusicSetMinGain(Music: PSfmlMusic; Gain: Single); cdecl; external CSfmlAudioLibrary name 'sfMusic_setMinGain';
+  function SfmlMusicGetMinGain(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getMinGain';
+  procedure SfmlMusicSetMaxGain(Music: PSfmlMusic; Gain: Single); cdecl; external CSfmlAudioLibrary name 'sfMusic_setMaxGain';
+  function SfmlMusicGetMaxGain(const Music: PSfmlMusic): Single; cdecl; external CSfmlAudioLibrary name 'sfMusic_getMaxGain';
+  procedure SfmlMusicSetEffectProcessor(Music: PSfmlMusic; EffectProcessor: TSfmlEffectProcessor); cdecl; external CSfmlAudioLibrary name 'sfMusic_setEffectProcessor';
+  function SfmlMusicGetChannelMap(const Music: PSfmlMusic; Count: PNativeUInt): PSfmlSoundChannel; cdecl; external CSfmlAudioLibrary name 'sfMusic_getChannelMap';
+  function SfmlMusicGetLoopPoints(const Music: PSfmlMusic): TSfmlTimeSpan; cdecl; external CSfmlAudioLibrary name 'sfMusic_getLoopPoints';
+  procedure SfmlMusicSetLoopPoints(Music: PSfmlMusic; TimePoints: TSfmlTimeSpan); cdecl; external CSfmlAudioLibrary name 'sfMusic_setLoopPoints';
 
-  function SfmlSoundStreamCreate(OnGetData: TSfmlSoundStreamGetDataCallback; OnSeek: TSfmlSoundStreamSeekCallback; ChannelCount, SampleRate: Cardinal; UserData: Pointer): PSfmlSoundStream; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_create';
+  function SfmlSoundStreamCreate(OnGetData: TSfmlSoundStreamGetDataCallback; OnSeek: TSfmlSoundStreamSeekCallback; ChannelCount, SampleRate: Cardinal; ChannelMapData: PSfmlSoundChannel; ChannelMapSize: NativeUInt; UserData: Pointer): PSfmlSoundStream; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_create';
   procedure SfmlSoundStreamDestroy(SoundStream: PSfmlSoundStream); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_destroy';
   procedure SfmlSoundStreamPlay(SoundStream: PSfmlSoundStream); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_play';
   procedure SfmlSoundStreamPause(SoundStream: PSfmlSoundStream); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_pause';
@@ -382,19 +579,41 @@ var
   procedure SfmlSoundStreamSetMinDistance(SoundStream: PSfmlSoundStream; Distance: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setMinDistance';
   procedure SfmlSoundStreamSetAttenuation(SoundStream: PSfmlSoundStream; Attenuation: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setAttenuation';
   procedure SfmlSoundStreamSetPlayingOffset(SoundStream: PSfmlSoundStream; TimeOffset: TSfmlTime); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setPlayingOffset';
-  procedure SfmlSoundStreamSetLoop(SoundStream: PSfmlSoundStream; Loop: LongBool); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setLoop';
+  procedure SfmlSoundStreamSetLooping(SoundStream: PSfmlSoundStream; Loop: LongBool); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setLooping';
   function SfmlSoundStreamGetPitch(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getPitch';
   function SfmlSoundStreamGetVolume(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getVolume';
   function SfmlSoundStreamGetPosition(const SoundStream: PSfmlSoundStream): TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getPosition';
   function SfmlSoundStreamIsRelativeToListener(const SoundStream: PSfmlSoundStream): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_isRelativeToListener';
   function SfmlSoundStreamGetMinDistance(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getMinDistance';
   function SfmlSoundStreamGetAttenuation(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getAttenuation';
-  function SfmlSoundStreamGetLoop(const SoundStream: PSfmlSoundStream): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getLoop';
+  function SfmlSoundStreamIsLooping(const SoundStream: PSfmlSoundStream): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_isLooping';
   {$IFNDEF INT64RETURNWORKAROUND}
   function SfmlSoundStreamGetPlayingOffset(const SoundStream: PSfmlSoundStream): TSfmlTime; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getPlayingOffset';
   {$ENDIF}
+  function SfmlSoundStreamGetChannelMap(const SoundStream: PSfmlSoundStream; Count: PNativeUInt): PSfmlSoundChannel; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getChannelMap';
+  procedure SfmlSoundStreamSetPan(SoundStream: PSfmlSoundStream; Pan: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setPan';
+  function SfmlSoundStreamGetPan(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getPan';
+  procedure SfmlSoundStreamSetSpatializationEnabled(SoundStream: PSfmlSoundStream; Enabled: LongBool); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setSpatializationEnabled';
+  function SfmlSoundStreamIsSpatializationEnabled(const SoundStream: PSfmlSoundStream): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_isSpatializationEnabled';
+  procedure SfmlSoundStreamSetDirection(SoundStream: PSfmlSoundStream; Direction: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setDirection';
+  function SfmlSoundStreamGetDirection(const SoundStream: PSfmlSoundStream): TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getDirection';
+  procedure SfmlSoundStreamSetCone(SoundStream: PSfmlSoundStream; Cone: TSfmlSoundSourceCone); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setCone';
+  function SfmlSoundStreamGetCone(const SoundStream: PSfmlSoundStream): TSfmlSoundSourceCone; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getCone';
+  procedure SfmlSoundStreamSetVelocity(SoundStream: PSfmlSoundStream; Velocity: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setVelocity';
+  function SfmlSoundStreamGetVelocity(const SoundStream: PSfmlSoundStream): TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getVelocity';
+  procedure SfmlSoundStreamSetDopplerFactor(SoundStream: PSfmlSoundStream; Factor: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setDopplerFactor';
+  function SfmlSoundStreamGetDopplerFactor(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getDopplerFactor';
+  procedure SfmlSoundStreamSetDirectionalAttenuationFactor(SoundStream: PSfmlSoundStream; Factor: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setDirectionalAttenuationFactor';
+  function SfmlSoundStreamGetDirectionalAttenuationFactor(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getDirectionalAttenuationFactor';
+  procedure SfmlSoundStreamSetMaxDistance(SoundStream: PSfmlSoundStream; Distance: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setMaxDistance';
+  function SfmlSoundStreamGetMaxDistance(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getMaxDistance';
+  procedure SfmlSoundStreamSetMinGain(SoundStream: PSfmlSoundStream; Gain: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setMinGain';
+  function SfmlSoundStreamGetMinGain(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getMinGain';
+  procedure SfmlSoundStreamSetMaxGain(SoundStream: PSfmlSoundStream; Gain: Single); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setMaxGain';
+  function SfmlSoundStreamGetMaxGain(const SoundStream: PSfmlSoundStream): Single; cdecl; external CSfmlAudioLibrary name 'sfSoundStream_getMaxGain';
+  procedure SfmlSoundStreamSetEffectProcessor(SoundStream: PSfmlSoundStream; EffectProcessor: TSfmlEffectProcessor); cdecl; external CSfmlAudioLibrary name 'sfSoundStream_setEffectProcessor';
 
-  function SfmlSoundCreate: PSfmlSound; cdecl; external CSfmlAudioLibrary name 'sfSound_create';
+  function SfmlSoundCreate(const Buffer: PSfmlSoundBuffer): PSfmlSound; cdecl; external CSfmlAudioLibrary name 'sfSound_create';
   function SfmlSoundCopy(const Sound: PSfmlSound): PSfmlSound; cdecl; external CSfmlAudioLibrary name 'sfSound_copy';
   procedure SfmlSoundDestroy(Sound: PSfmlSound); cdecl; external CSfmlAudioLibrary name 'sfSound_destroy';
   procedure SfmlSoundPlay(Sound: PSfmlSound); cdecl; external CSfmlAudioLibrary name 'sfSound_play';
@@ -402,8 +621,8 @@ var
   procedure SfmlSoundStop(Sound: PSfmlSound); cdecl; external CSfmlAudioLibrary name 'sfSound_stop';
   procedure SfmlSoundSetBuffer(Sound: PSfmlSound; const Buffer: PSfmlSoundBuffer); cdecl; external CSfmlAudioLibrary name 'sfSound_setBuffer';
   function SfmlSoundGetBuffer(const Sound: PSfmlSound): PSfmlSoundBuffer; cdecl; external CSfmlAudioLibrary name 'sfSound_getBuffer';
-  procedure SfmlSoundSetLoop(Sound: PSfmlSound; Loop: LongBool); cdecl; external CSfmlAudioLibrary name 'sfSound_setLoop';
-  function SfmlSoundGetLoop(const Sound: PSfmlSound): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSound_getLoop';
+  procedure SfmlSoundSetLooping(Sound: PSfmlSound; Loop: LongBool); cdecl; external CSfmlAudioLibrary name 'sfSound_setLooping';
+  function SfmlSoundIsLooping(const Sound: PSfmlSound): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSound_isLooping';
   function SfmlSoundGetStatus(const Sound: PSfmlSound): TSfmlSoundStatus; cdecl; external CSfmlAudioLibrary name 'sfSound_getStatus';
   procedure SfmlSoundSetPitch(Sound: PSfmlSound; Pitch: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setPitch';
   procedure SfmlSoundSetVolume(Sound: PSfmlSound; Volume: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setVolume';
@@ -421,6 +640,27 @@ var
 {$IFNDEF INT64RETURNWORKAROUND}
   function SfmlSoundGetPlayingOffset(const Sound: PSfmlSound): TSfmlTime; cdecl; external CSfmlAudioLibrary name 'sfSound_getPlayingOffset';
 {$ENDIF}
+  procedure SfmlSoundSetPan(Sound: PSfmlSound; Pan: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setPan';
+  function SfmlSoundGetPan(const Sound: PSfmlSound): Single; cdecl; external CSfmlAudioLibrary name 'sfSound_getPan';
+  procedure SfmlSoundSetSpatializationEnabled(Sound: PSfmlSound; Enabled: LongBool); cdecl; external CSfmlAudioLibrary name 'sfSound_setSpatializationEnabled';
+  function SfmlSoundIsSpatializationEnabled(const Sound: PSfmlSound): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSound_isSpatializationEnabled';
+  procedure SfmlSoundSetDirection(Sound: PSfmlSound; Direction: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfSound_setDirection';
+  function SfmlSoundGetDirection(const Sound: PSfmlSound): TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfSound_getDirection';
+  procedure SfmlSoundSetCone(Sound: PSfmlSound; Cone: TSfmlSoundSourceCone); cdecl; external CSfmlAudioLibrary name 'sfSound_setCone';
+  function SfmlSoundGetCone(const Sound: PSfmlSound): TSfmlSoundSourceCone; cdecl; external CSfmlAudioLibrary name 'sfSound_getCone';
+  procedure SfmlSoundSetVelocity(Sound: PSfmlSound; Velocity: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfSound_setVelocity';
+  function SfmlSoundGetVelocity(const Sound: PSfmlSound): TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfSound_getVelocity';
+  procedure SfmlSoundSetDopplerFactor(Sound: PSfmlSound; Factor: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setDopplerFactor';
+  function SfmlSoundGetDopplerFactor(const Sound: PSfmlSound): Single; cdecl; external CSfmlAudioLibrary name 'sfSound_getDopplerFactor';
+  procedure SfmlSoundSetDirectionalAttenuationFactor(Sound: PSfmlSound; Factor: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setDirectionalAttenuationFactor';
+  function SfmlSoundGetDirectionalAttenuationFactor(const Sound: PSfmlSound): Single; cdecl; external CSfmlAudioLibrary name 'sfSound_getDirectionalAttenuationFactor';
+  procedure SfmlSoundSetMaxDistance(Sound: PSfmlSound; Distance: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setMaxDistance';
+  function SfmlSoundGetMaxDistance(const Sound: PSfmlSound): Single; cdecl; external CSfmlAudioLibrary name 'sfSound_getMaxDistance';
+  procedure SfmlSoundSetMinGain(Sound: PSfmlSound; Gain: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setMinGain';
+  function SfmlSoundGetMinGain(const Sound: PSfmlSound): Single; cdecl; external CSfmlAudioLibrary name 'sfSound_getMinGain';
+  procedure SfmlSoundSetMaxGain(Sound: PSfmlSound; Gain: Single); cdecl; external CSfmlAudioLibrary name 'sfSound_setMaxGain';
+  function SfmlSoundGetMaxGain(const Sound: PSfmlSound): Single; cdecl; external CSfmlAudioLibrary name 'sfSound_getMaxGain';
+  procedure SfmlSoundSetEffectProcessor(Sound: PSfmlSound; EffectProcessor: TSfmlEffectProcessor); cdecl; external CSfmlAudioLibrary name 'sfSound_setEffectProcessor';
 
   function SfmlSoundBufferCreateFromFile(const FileName: PAnsiChar): PSfmlSoundBuffer; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_createFromFile';
   function SfmlSoundBufferCreateFromMemory(const Data: Pointer; SizeInBytes: NativeUInt): PSfmlSoundBuffer; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_createFromMemory';
@@ -452,13 +692,13 @@ var
   procedure SfmlSoundRecorderStop(SoundRecorder: PSfmlSoundRecorder); cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_stop';
   function SfmlSoundRecorderGetSampleRate(const SoundRecorder: PSfmlSoundRecorder): Cardinal; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_getSampleRate';
   function SfmlSoundRecorderIsAvailable: LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_isAvailable';
-  procedure SfmlSoundRecorderSetProcessingInterval(SoundRecorder: PSfmlSoundRecorder; Interval: TSfmlTime); cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_setProcessingInterval';
   function SfmlSoundRecorderGetAvailableDevices(count: PNativeUInt): PPAnsiChar; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_getAvailableDevices';
   function SfmlSoundRecorderGetDefaultDevice: PAnsiChar; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_getDefaultDevice';
   function SfmlSoundRecorderSetDevice(SoundRecorder: PSfmlSoundRecorder; const Name: PAnsiChar): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_setDevice';
   function SfmlSoundRecorderGetDevice(SoundRecorder: PSfmlSoundRecorder): PAnsiChar; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_getDevice';
-  function SfmlSoundRecorderSetChannelCount(SoundRecorder: PSfmlSoundRecorder; const ChannelCount: Cardinal): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_getChannelCount';
-  function SfmlSoundRecorderGetChannelCount(const SoundRecorder: PSfmlSoundRecorder): Cardinal; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_setChannelCount';
+  function SfmlSoundRecorderSetChannelCount(SoundRecorder: PSfmlSoundRecorder; const ChannelCount: Cardinal): LongBool; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_setChannelCount';
+  function SfmlSoundRecorderGetChannelCount(const SoundRecorder: PSfmlSoundRecorder): Cardinal; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_getChannelCount';
+  function SfmlSoundRecorderGetChannelMap(const SoundRecorder: PSfmlSoundRecorder; Count: PNativeUInt): PSfmlSoundChannel; cdecl; external CSfmlAudioLibrary name 'sfSoundRecorder_getChannelMap';
 {$ENDIF}
 
 type
@@ -513,7 +753,8 @@ type
   public
     constructor Create(OnGetData: TSfmlSoundStreamGetDataCallback;
       OnSeek: TSfmlSoundStreamSeekCallback;
-      ChannelCount, SampleRate: Cardinal; UserData: Pointer);
+      ChannelCount, SampleRate: Cardinal; ChannelMapData: PSfmlSoundChannel = nil;
+      ChannelMapSize: NativeUInt = 0; UserData: Pointer = nil);
     destructor Destroy; override;
 
     procedure Play;
@@ -522,7 +763,7 @@ type
 
     property ChannelCount: Cardinal read GetChannelCount;
     property Handle: PSfmlSoundStream read FHandle;
-    property Loop: Boolean read GetLoop write SetLoop;
+    property Looping: Boolean read GetLoop write SetLoop;
     property PlayingOffset: TSfmlTime read GetPlayingOffset write SetPlayingOffset;
     property SampleRate: Cardinal read GetSampleRate;
   end;
@@ -565,7 +806,7 @@ type
     property ChannelCount: Cardinal read GetChannelCount;
     property Duration: TSfmlTime read GetDuration;
     property Handle: PSfmlMusic read FHandle;
-    property Loop: Boolean read GetLoop write SetLoop;
+    property Looping: Boolean read GetLoop write SetLoop;
     property MinDistance: Single read GetMinDistance write SetMinDistance;
     property Pitch: Single read GetPitch write SetPitch;
     property PlayingOffset: TSfmlTime read GetPlayingOffset write SetPlayingOffset;
@@ -626,8 +867,8 @@ type
     procedure SetRelativeToListener(Relative: Boolean); override;
     procedure SetVolume(Volume: Single); override;
   public
-    constructor Create; overload;
     constructor Create(Buffer: TSfmlSoundBuffer); overload;
+    constructor Create(Buffer: PSfmlSoundBuffer); overload;
     destructor Destroy; override;
 
     function Copy: TSfmlSound;
@@ -641,7 +882,7 @@ type
     procedure Stop;
 
     property Handle: PSfmlSound read FHandle;
-    property Loop: Boolean read GetLoop write SetLoop;
+    property Looping: Boolean read GetLoop write SetLoop;
     property PlayingOffset: TSfmlTime read GetPlayingOffset write SetPlayingOffset;
   end;
 
@@ -676,7 +917,6 @@ type
 
     function Start(SampleRate: Cardinal): Boolean;
     procedure Stop;
-    procedure SetProcessingInterval(Interval: TSfmlTime);
 
     property Handle: PSfmlSoundRecorder read FHandle;
     property Device: AnsiString read GetDevice write SetDevice;
@@ -746,7 +986,7 @@ end;
 
 function TSfmlMusic.GetLoop: Boolean;
 begin
-  Result := SfmlMusicGetLoop(FHandle);
+  Result := SfmlMusicIsLooping(FHandle);
 end;
 
 function TSfmlMusic.GetMinDistance: Single;
@@ -806,7 +1046,7 @@ end;
 
 procedure TSfmlMusic.SetLoop(Loop: Boolean);
 begin
-  SfmlMusicSetLoop(FHandle, Loop);
+  SfmlMusicSetLooping(FHandle, Loop);
 end;
 
 procedure TSfmlMusic.SetMinDistance(Distance: Single);
@@ -849,10 +1089,11 @@ end;
 
 constructor TSfmlSoundStream.Create(OnGetData: TSfmlSoundStreamGetDataCallback;
   OnSeek: TSfmlSoundStreamSeekCallback; ChannelCount, SampleRate: Cardinal;
+  ChannelMapData: PSfmlSoundChannel; ChannelMapSize: NativeUInt;
   UserData: Pointer);
 begin
   FHandle := SfmlSoundStreamCreate(OnGetData, OnSeek, ChannelCount, SampleRate,
-    UserData);
+    ChannelMapData, ChannelMapSize, UserData);
 end;
 
 destructor TSfmlSoundStream.Destroy;
@@ -873,7 +1114,7 @@ end;
 
 function TSfmlSoundStream.GetLoop: Boolean;
 begin
-  Result := SfmlSoundStreamGetLoop(FHandle);
+  Result := SfmlSoundStreamIsLooping(FHandle);
 end;
 
 function TSfmlSoundStream.GetMinDistance: Single;
@@ -933,7 +1174,7 @@ end;
 
 procedure TSfmlSoundStream.SetLoop(Loop: Boolean);
 begin
-  SfmlSoundStreamSetLoop(FHandle, Loop);
+  SfmlSoundStreamSetLooping(FHandle, Loop);
 end;
 
 procedure TSfmlSoundStream.SetMinDistance(Distance: Single);
@@ -1046,15 +1287,14 @@ end;
 
 { TSfmlSound }
 
-constructor TSfmlSound.Create;
-begin
-  FHandle := SfmlSoundCreate;
-end;
-
 constructor TSfmlSound.Create(Buffer: TSfmlSoundBuffer);
 begin
-  Create;
-  SetBuffer(Buffer);
+  FHandle := SfmlSoundCreate(Buffer.Handle);
+end;
+
+constructor TSfmlSound.Create(Buffer: PSfmlSoundBuffer);
+begin
+  FHandle := SfmlSoundCreate(Buffer);
 end;
 
 constructor TSfmlSound.Create(Handle: PSfmlSound);
@@ -1085,7 +1325,7 @@ end;
 
 function TSfmlSound.GetLoop: Boolean;
 begin
-  Result := SfmlSoundGetLoop(FHandle);
+  Result := SfmlSoundIsLooping(FHandle);
 end;
 
 function TSfmlSound.GetMinDistance: Single;
@@ -1150,7 +1390,7 @@ end;
 
 procedure TSfmlSound.SetLoop(Loop: Boolean);
 begin
-  SfmlSoundSetLoop(FHandle, Loop);
+  SfmlSoundSetLooping(FHandle, Loop);
 end;
 
 procedure TSfmlSound.SetMinDistance(Distance: Single);
@@ -1253,11 +1493,6 @@ begin
   Assert(SfmlSoundRecorderSetDevice(FHandle, PAnsiChar(Name)));
 end;
 
-procedure TSfmlSoundRecorder.SetProcessingInterval(Interval: TSfmlTime);
-begin
-  SfmlSoundRecorderSetProcessingInterval(FHandle, Interval);
-end;
-
 function TSfmlSoundRecorder.Start(SampleRate: Cardinal): Boolean;
 begin
   Result := SfmlSoundRecorderStart(FHandle, SampleRate);
@@ -1305,12 +1540,16 @@ begin
       SfmlListenerGetDirection := BindFunction('sfListener_getDirection');
       SfmlListenerSetUpVector := BindFunction('sfListener_setUpVector');
       SfmlListenerGetUpVector := BindFunction('sfListener_getUpVector');
+      SfmlListenerSetVelocity := BindFunction('sfListener_setVelocity');
+      SfmlListenerGetVelocity := BindFunction('sfListener_getVelocity');
+      SfmlListenerSetCone := BindFunction('sfListener_setCone');
+      SfmlListenerGetCone := BindFunction('sfListener_getCone');
       SfmlMusicCreateFromFile := BindFunction('sfMusic_createFromFile');
       SfmlMusicCreateFromMemory := BindFunction('sfMusic_createFromMemory');
       SfmlMusicCreateFromStream := BindFunction('sfMusic_createFromStream');
       SfmlMusicDestroy := BindFunction('sfMusic_destroy');
-      SfmlMusicSetLoop := BindFunction('sfMusic_setLoop');
-      SfmlMusicGetLoop := BindFunction('sfMusic_getLoop');
+      SfmlMusicSetLooping := BindFunction('sfMusic_setLooping');
+      SfmlMusicIsLooping := BindFunction('sfMusic_isLooping');
       SfmlMusicPlay := BindFunction('sfMusic_play');
       SfmlMusicPause := BindFunction('sfMusic_pause');
       SfmlMusicStop := BindFunction('sfMusic_stop');
@@ -1330,6 +1569,30 @@ begin
       SfmlMusicIsRelativeToListener := BindFunction('sfMusic_isRelativeToListener');
       SfmlMusicGetMinDistance := BindFunction('sfMusic_getMinDistance');
       SfmlMusicGetAttenuation := BindFunction('sfMusic_getAttenuation');
+      SfmlMusicSetPan := BindFunction('sfMusic_setPan');
+      SfmlMusicGetPan := BindFunction('sfMusic_getPan');
+      SfmlMusicSetSpatializationEnabled := BindFunction('sfMusic_setSpatializationEnabled');
+      SfmlMusicIsSpatializationEnabled := BindFunction('sfMusic_isSpatializationEnabled');
+      SfmlMusicSetDirection := BindFunction('sfMusic_setDirection');
+      SfmlMusicGetDirection := BindFunction('sfMusic_getDirection');
+      SfmlMusicSetCone := BindFunction('sfMusic_setCone');
+      SfmlMusicGetCone := BindFunction('sfMusic_getCone');
+      SfmlMusicSetVelocity := BindFunction('sfMusic_setVelocity');
+      SfmlMusicGetVelocity := BindFunction('sfMusic_getVelocity');
+      SfmlMusicSetDopplerFactor := BindFunction('sfMusic_setDopplerFactor');
+      SfmlMusicGetDopplerFactor := BindFunction('sfMusic_getDopplerFactor');
+      SfmlMusicSetDirectionalAttenuationFactor := BindFunction('sfMusic_setDirectionalAttenuationFactor');
+      SfmlMusicGetDirectionalAttenuationFactor := BindFunction('sfMusic_getDirectionalAttenuationFactor');
+      SfmlMusicSetMaxDistance := BindFunction('sfMusic_setMaxDistance');
+      SfmlMusicGetMaxDistance := BindFunction('sfMusic_getMaxDistance');
+      SfmlMusicSetMinGain := BindFunction('sfMusic_setMinGain');
+      SfmlMusicGetMinGain := BindFunction('sfMusic_getMinGain');
+      SfmlMusicSetMaxGain := BindFunction('sfMusic_setMaxGain');
+      SfmlMusicGetMaxGain := BindFunction('sfMusic_getMaxGain');
+      SfmlMusicSetEffectProcessor := BindFunction('sfMusic_setEffectProcessor');
+      SfmlMusicGetChannelMap := BindFunction('sfMusic_getChannelMap');
+      SfmlMusicGetLoopPoints := BindFunction('sfMusic_getLoopPoints');
+      SfmlMusicSetLoopPoints := BindFunction('sfMusic_setLoopPoints');
       SfmlSoundStreamCreate := BindFunction('sfSoundStream_create');
       SfmlSoundStreamDestroy := BindFunction('sfSoundStream_destroy');
       SfmlSoundStreamPlay := BindFunction('sfSoundStream_play');
@@ -1345,14 +1608,36 @@ begin
       SfmlSoundStreamSetMinDistance := BindFunction('sfSoundStream_setMinDistance');
       SfmlSoundStreamSetAttenuation := BindFunction('sfSoundStream_setAttenuation');
       SfmlSoundStreamSetPlayingOffset := BindFunction('sfSoundStream_setPlayingOffset');
-      SfmlSoundStreamSetLoop := BindFunction('sfSoundStream_setLoop');
+      SfmlSoundStreamSetLooping := BindFunction('sfSoundStream_setLooping');
       SfmlSoundStreamGetPitch := BindFunction('sfSoundStream_getPitch');
       SfmlSoundStreamGetVolume := BindFunction('sfSoundStream_getVolume');
       SfmlSoundStreamGetPosition := BindFunction('sfSoundStream_getPosition');
       SfmlSoundStreamIsRelativeToListener := BindFunction('sfSoundStream_isRelativeToListener');
       SfmlSoundStreamGetMinDistance := BindFunction('sfSoundStream_getMinDistance');
       SfmlSoundStreamGetAttenuation := BindFunction('sfSoundStream_getAttenuation');
-      SfmlSoundStreamGetLoop := BindFunction('sfSoundStream_getLoop');
+      SfmlSoundStreamIsLooping := BindFunction('sfSoundStream_isLooping');
+      SfmlSoundStreamGetChannelMap := BindFunction('sfSoundStream_getChannelMap');
+      SfmlSoundStreamSetPan := BindFunction('sfSoundStream_setPan');
+      SfmlSoundStreamGetPan := BindFunction('sfSoundStream_getPan');
+      SfmlSoundStreamSetSpatializationEnabled := BindFunction('sfSoundStream_setSpatializationEnabled');
+      SfmlSoundStreamIsSpatializationEnabled := BindFunction('sfSoundStream_isSpatializationEnabled');
+      SfmlSoundStreamSetDirection := BindFunction('sfSoundStream_setDirection');
+      SfmlSoundStreamGetDirection := BindFunction('sfSoundStream_getDirection');
+      SfmlSoundStreamSetCone := BindFunction('sfSoundStream_setCone');
+      SfmlSoundStreamGetCone := BindFunction('sfSoundStream_getCone');
+      SfmlSoundStreamSetVelocity := BindFunction('sfSoundStream_setVelocity');
+      SfmlSoundStreamGetVelocity := BindFunction('sfSoundStream_getVelocity');
+      SfmlSoundStreamSetDopplerFactor := BindFunction('sfSoundStream_setDopplerFactor');
+      SfmlSoundStreamGetDopplerFactor := BindFunction('sfSoundStream_getDopplerFactor');
+      SfmlSoundStreamSetDirectionalAttenuationFactor := BindFunction('sfSoundStream_setDirectionalAttenuationFactor');
+      SfmlSoundStreamGetDirectionalAttenuationFactor := BindFunction('sfSoundStream_getDirectionalAttenuationFactor');
+      SfmlSoundStreamSetMaxDistance := BindFunction('sfSoundStream_setMaxDistance');
+      SfmlSoundStreamGetMaxDistance := BindFunction('sfSoundStream_getMaxDistance');
+      SfmlSoundStreamSetMinGain := BindFunction('sfSoundStream_setMinGain');
+      SfmlSoundStreamGetMinGain := BindFunction('sfSoundStream_getMinGain');
+      SfmlSoundStreamSetMaxGain := BindFunction('sfSoundStream_setMaxGain');
+      SfmlSoundStreamGetMaxGain := BindFunction('sfSoundStream_getMaxGain');
+      SfmlSoundStreamSetEffectProcessor := BindFunction('sfSoundStream_setEffectProcessor');
       SfmlSoundCreate := BindFunction('sfSound_create');
       SfmlSoundCopy := BindFunction('sfSound_copy');
       SfmlSoundDestroy := BindFunction('sfSound_destroy');
@@ -1361,8 +1646,8 @@ begin
       SfmlSoundStop := BindFunction('sfSound_stop');
       SfmlSoundSetBuffer := BindFunction('sfSound_setBuffer');
       SfmlSoundGetBuffer := BindFunction('sfSound_getBuffer');
-      SfmlSoundSetLoop := BindFunction('sfSound_setLoop');
-      SfmlSoundGetLoop := BindFunction('sfSound_getLoop');
+      SfmlSoundSetLooping := BindFunction('sfSound_setLooping');
+      SfmlSoundIsLooping := BindFunction('sfSound_isLooping');
       SfmlSoundGetStatus := BindFunction('sfSound_getStatus');
       SfmlSoundSetPitch := BindFunction('sfSound_setPitch');
       SfmlSoundSetVolume := BindFunction('sfSound_setVolume');
@@ -1375,8 +1660,29 @@ begin
       SfmlSoundGetVolume := BindFunction('sfSound_getVolume');
       SfmlSoundGetPosition := BindFunction('sfSound_getPosition');
       SfmlSoundIsRelativeToListener := BindFunction('sfSound_isRelativeToListener');
-      SfmlSoundGetMinDistance := BindFunction('sfSound_isRelativeToListener');
+      SfmlSoundGetMinDistance := BindFunction('sfSound_getMinDistance');
       SfmlSoundGetAttenuation := BindFunction('sfSound_getAttenuation');
+      SfmlSoundSetPan := BindFunction('sfSound_setPan');
+      SfmlSoundGetPan := BindFunction('sfSound_getPan');
+      SfmlSoundSetSpatializationEnabled := BindFunction('sfSound_setSpatializationEnabled');
+      SfmlSoundIsSpatializationEnabled := BindFunction('sfSound_isSpatializationEnabled');
+      SfmlSoundSetDirection := BindFunction('sfSound_setDirection');
+      SfmlSoundGetDirection := BindFunction('sfSound_getDirection');
+      SfmlSoundSetCone := BindFunction('sfSound_setCone');
+      SfmlSoundGetCone := BindFunction('sfSound_getCone');
+      SfmlSoundSetVelocity := BindFunction('sfSound_setVelocity');
+      SfmlSoundGetVelocity := BindFunction('sfSound_getVelocity');
+      SfmlSoundSetDopplerFactor := BindFunction('sfSound_setDopplerFactor');
+      SfmlSoundGetDopplerFactor := BindFunction('sfSound_getDopplerFactor');
+      SfmlSoundSetDirectionalAttenuationFactor := BindFunction('sfSound_setDirectionalAttenuationFactor');
+      SfmlSoundGetDirectionalAttenuationFactor := BindFunction('sfSound_getDirectionalAttenuationFactor');
+      SfmlSoundSetMaxDistance := BindFunction('sfSound_setMaxDistance');
+      SfmlSoundGetMaxDistance := BindFunction('sfSound_getMaxDistance');
+      SfmlSoundSetMinGain := BindFunction('sfSound_setMinGain');
+      SfmlSoundGetMinGain := BindFunction('sfSound_getMinGain');
+      SfmlSoundSetMaxGain := BindFunction('sfSound_setMaxGain');
+      SfmlSoundGetMaxGain := BindFunction('sfSound_getMaxGain');
+      SfmlSoundSetEffectProcessor := BindFunction('sfSound_setEffectProcessor');
       SfmlSoundBufferCreateFromFile := BindFunction('sfSoundBuffer_createFromFile');
       SfmlSoundBufferCreateFromMemory := BindFunction('sfSoundBuffer_createFromMemory');
       SfmlSoundBufferCreateFromStream := BindFunction('sfSoundBuffer_createFromStream');
@@ -1402,13 +1708,13 @@ begin
       SfmlSoundRecorderStop := BindFunction('sfSoundRecorder_stop');
       SfmlSoundRecorderGetSampleRate := BindFunction('sfSoundRecorder_getSampleRate');
       SfmlSoundRecorderIsAvailable := BindFunction('sfSoundRecorder_isAvailable');
-      SfmlSoundRecorderSetProcessingInterval := BindFunction('sfSoundRecorder_setProcessingInterval');
       SfmlSoundRecorderGetAvailableDevices := BindFunction('sfSoundRecorder_getAvailableDevices');
       SfmlSoundRecorderGetDefaultDevice := BindFunction('sfSoundRecorder_getDefaultDevice');
       SfmlSoundRecorderSetDevice := BindFunction('sfSoundRecorder_setDevice');
       SfmlSoundRecorderGetDevice := BindFunction('sfSoundRecorder_getDevice');
       SfmlSoundRecorderSetChannelCount := BindFunction('sfSoundRecorder_setChannelCount');
       SfmlSoundRecorderGetChannelCount := BindFunction('sfSoundRecorder_getChannelCount');
+      SfmlSoundRecorderGetChannelMap := BindFunction('sfSoundRecorder_getChannelMap');
 
 {$IFDEF INT64RETURNWORKAROUND}
       sfMusic_getDuration := BindFunction('sfMusic_getDuration');

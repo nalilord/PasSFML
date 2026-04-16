@@ -42,7 +42,7 @@ implementation
 constructor TGame.Create;
 begin
   FWindow := TSfmlRenderWindow.Create(SfmlVideoMode(640, 480),
-    'SFML Application', [sfClose]);
+    'SFML Application', sfClose, sfWindowed);
 
   Assert(FileExists('../Resources/Eagle.png'));
   FTexture := TSfmlTexture.Create('../Resources/Eagle.png');
@@ -53,11 +53,10 @@ begin
   Assert(FileExists('../Resources/Sansation.ttf'));
   FFont := TSfmlFont.Create('../Resources/Sansation.ttf');
 
-  FStatisticsText := TSfmlText.Create;
-  FStatisticsText.Font := FFont.Handle;
+  FStatisticsText := TSfmlText.Create(FFont);
   FStatisticsText.Position := SfmlVector2f(5, 5);
   FStatisticsText.CharacterSize := 10;
-  FStatisticsText.Color := SfmlWhite;
+  FStatisticsText.FillColor := SfmlWhite;
 
   FStatisticsUpdateTime.MicroSeconds := 0;
   FStatisticsNumFrames := 0;

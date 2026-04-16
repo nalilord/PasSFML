@@ -26,24 +26,21 @@ begin
     raise Exception.Create('Invalid video mode');
 
   Window := TSfmlRenderWindow.Create(Mode, AnsiString('SFML Window'),
-    [sfResize, sfClose], nil);
+    sfResize or sfClose, sfWindowed, nil);
   try
     // Load a sprite to display
     Texture := TSfmlTexture.Create('../Resources/OncaPintada.jpg', nil);
     try
-      Sprite := TSfmlSprite.Create;
+      Sprite := TSfmlSprite.Create(Texture);
       try
-        Sprite.SetTexture(Texture, True);
-
         // Create a graphical text to display
         Font := TSfmlFont.Create('../Resources/AdmirationPains.ttf');
         try
-          Text := TSfmlText.Create;
+          Text := TSfmlText.Create(Font);
           try
             Text.&String := 'Hello World';
-            Text.Font := Font.Handle;
             Text.CharacterSize := 50;
-            Text.Color := SfmlBlack;
+            Text.FillColor := SfmlBlack;
             TextPos.X := 300;
             TextPos.Y := 20;
             Text.Position := TextPos;

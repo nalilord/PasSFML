@@ -114,7 +114,7 @@ end;
 { TestTSfmlSoundStream }
 
 function GetDataCallback(Chunk: PSfmlSoundStreamChunk;
-  UserData: Pointer): Boolean; cdecl;
+  UserData: Pointer): LongBool; cdecl;
 var
   Index: Integer;
   Data: PSmallInt;
@@ -145,7 +145,7 @@ end;
 procedure TestTSfmlSoundStream.SetUp;
 begin
   FSfmlSoundStream := TSfmlSoundStream.Create(GetDataCallback, SeekCallback,
-    1, 44100, Self);
+    1, 44100, nil, 0, Self);
 end;
 
 procedure TestTSfmlSoundStream.TearDown;
@@ -235,7 +235,7 @@ begin
   try
     CheckEquals(FSfmlSound.Attenuation, ReturnValue.Attenuation);
     CheckEquals(Pointer(FSfmlSound.GetBuffer), Pointer(ReturnValue.GetBuffer));
-    CheckEquals(FSfmlSound.Loop, ReturnValue.Loop);
+    CheckEquals(FSfmlSound.Looping, ReturnValue.Looping);
     CheckEquals(FSfmlSound.MinDistance, ReturnValue.MinDistance);
     CheckEquals(FSfmlSound.Pitch, ReturnValue.Pitch);
     CheckEquals(FSfmlSound.PlayingOffset.MicroSeconds, ReturnValue.PlayingOffset.MicroSeconds);
@@ -306,7 +306,7 @@ end;
 
 { TestTSfmlSoundRecorder }
 
-function StartCallback(UserData: Pointer): Boolean; cdecl;
+function StartCallback(UserData: Pointer): LongBool; cdecl;
 begin
   Assert(TObject(UserData) is TestTSfmlSoundRecorder);
 
@@ -315,7 +315,7 @@ begin
   Result := True;
 end;
 
-function ProcessCallback(Data: PSmallInt; SampleFrames: NativeUInt; UserData: Pointer): Boolean; cdecl;
+function ProcessCallback(Data: PSmallInt; SampleFrames: NativeUInt; UserData: Pointer): LongBool; cdecl;
 begin
   Assert(TObject(UserData) is TestTSfmlSoundRecorder);
 

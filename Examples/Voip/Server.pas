@@ -39,7 +39,7 @@ procedure DoServer(Port: Word);
 implementation
 
 
-function OnGetDataHandler(Chunk: PSfmlSoundStreamChunk; UserData: Pointer): Boolean; cdecl;
+function OnGetDataHandler(Chunk: PSfmlSoundStreamChunk; UserData: Pointer): LongBool; cdecl;
 begin
   Assert(TObject(UserData) is TNetworkAudioStream);
   Result := TNetworkAudioStream(UserData).OnGetData(Chunk);
@@ -58,9 +58,12 @@ constructor TNetworkAudioStream.Create;
 begin
   FOffset := 0;
   FHasFinished := False;
+  FListener := TSfmlTcpListener.Create;
+  FClient := TSfmlTcpSocket.Create;
+  FMutex := TSfmlMutex.Create;
 
   // Set the sound parameters
-  inherited Create(OnGetDataHandler, OnSeekHandler, 1, 44100, Self);
+  inherited Create(OnGetDataHandler, OnSeekHandler, 1, 44100, nil, 0, Self);
 end;
 
 
@@ -90,11 +93,13 @@ begin
 
         // Don't forget that the other thread can access the sample array at any time
         // (so we protect any operation on it with the mutex)
-        begin
-          FMutex.Lock;
+        FMutex.Lock;
+        try
           Pos := Length(FSamples);
           SetLength(FSamples, Length(FSamples) + SampleCount);
-          Move(Samples, FSamples[Pos], SampleCount);
+          Move(Samples^, FSamples[Pos], SampleCount * SizeOf(SmallInt));
+        finally
+          FMutex.Unlock;
         end;
       end
       else if ID = EndOfStream then
@@ -116,6 +121,8 @@ begin
 end;
 
 function TNetworkAudioStream.OnGetData(Data: PSfmlSoundStreamChunk): Boolean;
+var
+  SampleCount: Integer;
 begin
   // We have reached the end of the buffer and all audio data have been played: we can stop playback
   if ((FOffset >= Length(FSamples)) and FHasFinished) then
@@ -129,14 +136,23 @@ begin
   // (don't forget that we run in two separate threads)
   FMutex.Lock;
   try
-    // TODO:
-//    FTempBuffer.Assign(FSamples[FOffset], FSamples[Length(FSamples)]);
+    SampleCount := Length(FSamples) - FOffset;
+    if SampleCount > 0 then
+    begin
+      SetLength(FTempBuffer, SampleCount);
+      Move(FSamples[FOffset], FTempBuffer[0], SampleCount * SizeOf(SmallInt));
+    end
+    else
+      SetLength(FTempBuffer, 0);
   finally
     FMutex.Unlock;
   end;
 
   // Fill audio data to pass to the stream
-  Data.Samples     := @FTempBuffer[0];
+  if Length(FTempBuffer) > 0 then
+    Data.Samples := @FTempBuffer[0]
+  else
+    Data.Samples := nil;
   Data.SampleCount := Length(FTempBuffer);
 
   // Update the playing offset
@@ -155,15 +171,16 @@ begin
   if not FHasFinished then
   begin
     // Listen to the given port for incoming connections
-    if (FListener.listen(port) <> sfSocketDone) then
+    if (FListener.Listen(Port, SfmlIpAddressAny) <> sfSocketDone) then
       Exit;
 
     WriteLn('Server is listening to port ', Port, ', waiting for connections... ');
 
     // Wait for a connection
-    if (FListener.Accept(FClient) <> sfSocketDone)
+    FreeAndNil(FClient);
+    if (FListener.Accept(FClient) <> sfSocketDone) then
       Exit;
-    WriteLn('Client connected: ', FClient.getRemoteAddress.Address);
+    WriteLn('Client connected: ', FClient.GetRemoteAddress.Address);
 
     // Start playback
     Play;

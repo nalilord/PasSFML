@@ -95,6 +95,8 @@ implementation
 {$R *.dfm}
 
 procedure TFormMain.FormCreate(Sender: TObject);
+var
+  RenderTargetSize: TSfmlVector2u;
 begin
   FWindow := TSfmlRenderWindow.Create(TSfmlWindowHandle(PanelOutput.Handle));
 
@@ -102,7 +104,9 @@ begin
   FStates.Transform := SfmlTransformIdentity;
 
   // Create the off-screen surface
-  FRenderTarget := TSfmlRenderTexture.Create(200, 200);
+  RenderTargetSize.X := 200;
+  RenderTargetSize.Y := 200;
+  FRenderTarget := TSfmlRenderTexture.Create(RenderTargetSize);
 end;
 
 procedure TFormMain.FormDestroy(Sender: TObject);

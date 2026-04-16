@@ -185,6 +185,7 @@ type
 
   TestTSfmlText = class(TTestCase)
   strict private
+    FSfmlFont: TSfmlFont;
     FSfmlText: TSfmlText;
   public
     procedure SetUp; override;
@@ -849,8 +850,12 @@ end;
 { TestTSfmlRenderTexture }
 
 procedure TestTSfmlRenderTexture.SetUp;
+var
+  Size: TSfmlVector2u;
 begin
-  FSfmlRenderTexture := TSfmlRenderTexture.Create(64, 64);
+  Size.X := 64;
+  Size.Y := 64;
+  FSfmlRenderTexture := TSfmlRenderTexture.Create(Size);
 end;
 
 procedure TestTSfmlRenderTexture.TearDown;
@@ -1015,7 +1020,7 @@ begin
     ConvexShape.Free;
   end;
 
-  Sprite := TSfmlSprite.Create;
+  Sprite := TSfmlSprite.Create(PSfmlTexture(nil));
   try
     Assert(FileExists('../Resources/Sfml.png'));
     Texture := TSfmlTexture.Create('../Resources/Sfml.png');
@@ -1210,7 +1215,7 @@ begin
   States.Transform.Matrix[4] := 1;
   States.Transform.Matrix[8] := 1;
 
-  Sprite := TSfmlSprite.Create;
+  Sprite := TSfmlSprite.Create(PSfmlTexture(nil));
   try
     Sprite.Position := SfmlVector2f(16, 16);
 
@@ -1315,7 +1320,7 @@ end;
 procedure TestTSfmlRenderWindow.SetUp;
 begin
   FSfmlRenderWindow := TSfmlRenderWindow.Create(SfmlVideoMode(800, 600),
-    'Test', [sfTitleBar, sfResize, sfClose]);
+    'Test', sfTitleBar or sfResize or sfClose, sfWindowed);
 end;
 
 procedure TestTSfmlRenderWindow.TearDown;
@@ -1381,7 +1386,7 @@ procedure TestTSfmlRenderWindow.TestGetSystemHandle;
 var
   ReturnValue: TSfmlWindowHandle;
 begin
-  ReturnValue := FSfmlRenderWindow.GetSystemHandle;
+  ReturnValue := FSfmlRenderWindow.GetNativeHandle;
   // TODO: Check results
 end;
 
@@ -1514,7 +1519,7 @@ begin
     ConvexShape.Free;
   end;
 
-  Sprite := TSfmlSprite.Create;
+  Sprite := TSfmlSprite.Create(PSfmlTexture(nil));
   try
     Assert(FileExists('../Resources/Sfml.png'));
     Texture := TSfmlTexture.Create('../Resources/Sfml.png');
@@ -1683,7 +1688,7 @@ begin
   States.Transform.Matrix[4] := 1;
   States.Transform.Matrix[8] := 1;
 
-  Sprite := TSfmlSprite.Create;
+  Sprite := TSfmlSprite.Create(PSfmlTexture(nil));
   try
     Sprite.Position := SfmlVector2f(16, 16);
 
@@ -1800,7 +1805,7 @@ begin
     FSfmlRenderWindow.Display;
 
     // wait for event
-    if FSfmlRenderWindow.WaitEvent(Event) then
+    if FSfmlRenderWindow.WaitEvent(SfmlMilliseconds(100), Event) then
       if Event.EventType = sfEvtMouseButtonPressed then
         FSfmlRenderWindow.SetTitle(UnicodeString('Unicode Title'))
       else if Event.EventType = sfEvtClosed then
@@ -1819,7 +1824,7 @@ procedure TestTSfmlShader.SetUp;
 begin
   Assert(FileExists('../Resources/Wave.vert'));
   Assert(FileExists('../Resources/Blur.frag'));
-  FSfmlShader := TSfmlShader.CreateFromFile('../Resources/Wave.vert', '../Resources/Blur.frag');
+  FSfmlShader := TSfmlShader.CreateFromFile('../Resources/Wave.vert', '', '../Resources/Blur.frag');
 end;
 
 procedure TestTSfmlShader.TearDown;
@@ -1940,7 +1945,7 @@ end;
 
 procedure TestTSfmlSprite.SetUp;
 begin
-  FSfmlSprite := TSfmlSprite.Create;
+  FSfmlSprite := TSfmlSprite.Create(PSfmlTexture(nil));
 end;
 
 procedure TestTSfmlSprite.TearDown;
@@ -2053,13 +2058,17 @@ end;
 
 procedure TestTSfmlText.SetUp;
 begin
-  FSfmlText := TSfmlText.Create;
+  Assert(FileExists('../Resources/Sansation.ttf'));
+  FSfmlFont := TSfmlFont.Create('../Resources/Sansation.ttf');
+  FSfmlText := TSfmlText.Create(FSfmlFont);
 end;
 
 procedure TestTSfmlText.TearDown;
 begin
   FSfmlText.Free;
   FSfmlText := nil;
+  FSfmlFont.Free;
+  FSfmlFont := nil;
 end;
 
 procedure TestTSfmlText.TestCopy;
@@ -2070,7 +2079,7 @@ begin
   ReturnValue := FSfmlText.Copy;
   try
     CheckEquals(FSfmlText.CharacterSize, ReturnValue.CharacterSize);
-    CheckEquals(FSfmlText.Color.Value, ReturnValue.Color.Value);
+    CheckEquals(FSfmlText.FillColor.Value, ReturnValue.FillColor.Value);
     CheckEquals(FSfmlText.GlobalBounds.Left, ReturnValue.GlobalBounds.Left);
     CheckEquals(FSfmlText.GlobalBounds.Top, ReturnValue.GlobalBounds.Top);
     CheckEquals(FSfmlText.GlobalBounds.Width, ReturnValue.GlobalBounds.Width);
@@ -2240,7 +2249,7 @@ var
   RenderWindow: TSfmlRenderWindow;
 begin
   Window := TSfmlWindow.Create(SfmlVideoMode(800, 600), 'Test',
-    [sfTitleBar, sfClose]);
+    sfTitleBar or sfClose, sfWindowed);
   try
     Window.Display;
 
@@ -2253,7 +2262,7 @@ begin
   // TODO: Check results
 
   RenderWindow := TSfmlRenderWindow.Create(SfmlVideoMode(800, 600), 'Test',
-    [sfTitleBar, sfClose]);
+    sfTitleBar or sfClose, sfWindowed);
   try
     FSfmlTexture.UpdateFromRenderWindow(RenderWindow.Handle, 0, 0);
 

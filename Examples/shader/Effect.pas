@@ -44,11 +44,16 @@ begin
     OnDraw(Target, States)
   else
   begin
-    Error := TSfmlText.Create;
-    Error.&String := 'Shader not supported';
-    Error.Position := SfmlVector2F(320, 200);
-    Error.CharacterSize := 36;
-    Target.Draw(Error, States);
+    Error := TSfmlText.Create(FFont);
+    try
+      Error.&String := 'Shader not supported';
+      Error.Position := SfmlVector2F(320, 200);
+      Error.CharacterSize := 36;
+      Error.FillColor := SfmlWhite;
+      Target.Draw(Error, States);
+    finally
+      Error.Free;
+    end;
   end;
 end;
 

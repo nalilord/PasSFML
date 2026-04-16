@@ -37,13 +37,12 @@ begin
 
   // Create the window of the application
   Window := TSfmlRenderWindow.Create(SfmlVideoMode(GameWidth, GameHeight, 32),
-    AnsiString('SFML Pong'), [sfTitleBar, sfClose], nil);
+    AnsiString('SFML Pong'), sfTitleBar or sfClose, sfWindowed, nil);
   Window.SetVerticalSyncEnabled(True);
 
   // Load the sounds used in the game
   BallSoundBuffer := TSfmlSoundBuffer.Create('../Resources/Ball.wav');
-  BallSound := TSfmlSound.Create;
-  BallSound.SetBuffer(BallSoundBuffer);
+  BallSound := TSfmlSound.Create(BallSoundBuffer);
 
   // Create the left paddle
   LeftPaddle := TSfmlRectangleShape.Create;
@@ -73,11 +72,10 @@ begin
   Font := TSfmlFont.Create('../Resources/Sansation.ttf');
 
   // Initialize the pause message
-  PauseMessage := TSfmlText.Create;
-  PauseMessage.Font := Font.Handle;
+  PauseMessage := TSfmlText.Create(Font);
   PauseMessage.CharacterSize := 40;
   PauseMessage.Position := SfmlVector2f(170, 150);
-  PauseMessage.Color := SfmlWhite;
+  PauseMessage.FillColor := SfmlWhite;
   PauseMessage.&String := 'Welcome to SFML pong!'#10 +
     'Press space to start the game';
 

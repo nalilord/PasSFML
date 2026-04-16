@@ -16,8 +16,8 @@ type
     FHost: TSfmlIpAddress;
     FPort: Word;
     FSocket: TSfmlTcpSocket;
-    function OnStart: Boolean; virtual;
-    function OnProcessSamples(const Samples: PSmallInt; SampleCount: NativeUInt): Boolean; virtual;
+    function OnStart: LongBool; virtual;
+    function OnProcessSamples(const Samples: PSmallInt; SampleCount: NativeUInt): LongBool; virtual;
     procedure OnStop; virtual;
   public
     constructor Create(Host: TSfmlIpAddress; Port: Word);
@@ -27,7 +27,7 @@ procedure DoClient(Port: Word);
 
 implementation
 
-function OnStartHandler(UserData: Pointer): Boolean; cdecl;
+function OnStartHandler(UserData: Pointer): LongBool; cdecl;
 begin
   Assert(TObject(UserData) is TNetworkRecorder);
   Result := TNetworkRecorder(UserData).OnStart;
@@ -35,7 +35,7 @@ end;
 
 
 function OnProcessSamplesHandler(Data: PSmallInt; SampleFrames: NativeUInt;
-  UserData: Pointer): Boolean; cdecl;
+  UserData: Pointer): LongBool; cdecl;
 begin
   Assert(TObject(UserData) is TNetworkRecorder);
   Result := TNetworkRecorder(UserData).OnProcessSamples(Data, SampleFrames);
@@ -55,9 +55,10 @@ begin
   inherited Create(OnStartHandler, OnProcessSamplesHandler, OnStopHandler, Self);
   FHost := Host;
   FPort := Port;
+  FSocket := TSfmlTcpSocket.Create;
 end;
 
-function TNetworkRecorder.OnStart: Boolean;
+function TNetworkRecorder.OnStart: LongBool;
 begin
   if FSocket.Connect(FHost, FPort, SfmlTimeZero) = sfSocketDone then
   begin
@@ -68,7 +69,7 @@ begin
     Result := false;
 end;
 
-function TNetworkRecorder.OnProcessSamples(const Samples: PSmallInt; SampleCount: NativeUInt): Boolean;
+function TNetworkRecorder.OnProcessSamples(const Samples: PSmallInt; SampleCount: NativeUInt): LongBool;
 var
   Packet: TSfmlPacket;
 begin
@@ -136,4 +137,3 @@ begin
 end;
 
 end.
-

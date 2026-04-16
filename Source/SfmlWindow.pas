@@ -38,9 +38,9 @@ uses
 
 const
 {$IF Defined(MSWINDOWS)}
-  CSfmlWindowLibrary = 'csfml-window-2.dll';
+  CSfmlWindowLibrary = 'csfml-window-3.dll';
 {$ELSEIF Defined(DARWIN) or Defined(MACOS)}
-  CSfmlWindowLibrary = 'csfml-window-2.dylib';
+  CSfmlWindowLibrary = 'csfml-window-3.dylib';
 {$ELSEIF Defined(UNIX)}
   CSfmlWindowLibrary = 'csfml-window.so';
 {$IFEND}
@@ -67,19 +67,30 @@ type
   PSfmlVideoMode = ^TSfmlVideoMode;
 
 {$IF Defined(MSWINDOWS)}
-  TSfmlWindowHandle = ^HWND;
+  TSfmlWindowHandle = HWND;
 {$ELSEIF Defined(DARWIN) or Defined(MACOS)}
   TSfmlWindowHandle = Pointer;
 {$ELSEIF Defined(UNIX)}
-  TSfmlWindowHandle = Cardinal;
+  TSfmlWindowHandle = NativeUInt;
 {$IFEND}
 
-  TSfmlWindowStyle = (sfTitleBar, sfResize, sfClose, sfFullscreen);
-  TSfmlWindowStyles = set of TSfmlWindowStyle;
+  TSfmlWindowStyle = Cardinal;
+  TSfmlScanCode = LongInt;
 
-  TSfmlContextAttributeFlag = (sfContextDefault, sfContextCore,
-    sfContextDebug);
-  TSfmlContextAttributeFlags = set of TSfmlContextAttributeFlag;
+  TSfmlWindowState = (sfWindowed, sfFullscreen);
+  TSfmlContextAttributeFlags = Cardinal;
+
+const
+  sfNone = 0;
+  sfTitleBar = 1 shl 0;
+  sfResize = 1 shl 1;
+  sfClose = 1 shl 2;
+  sfDefaultStyle = sfTitleBar or sfResize or sfClose;
+  sfContextDefault = 0;
+  sfContextCore = 1 shl 0;
+  sfContextDebug = 1 shl 2;
+
+type
 
   TSfmlContextSettings = record
     DepthBits: Cardinal;
@@ -94,11 +105,12 @@ type
 
   TSfmlEventType = (sfEvtClosed, sfEvtResized, sfEvtLostFocus,
     sfEvtGainedFocus, sfEvtTextEntered, sfEvtKeyPressed, sfEvtKeyReleased,
-    sfEvtMouseWheelMoved, sfEvtMouseWheelScrolled, sfEvtMouseButtonPressed,
-    sfEvtMouseButtonReleased, sfEvtMouseMoved, sfEvtMouseEntered,
-    sfEvtMouseLeft, sfEvtJoystickButtonPressed, sfEvtJoystickButtonReleased,
-    sfEvtJoystickMoved, sfEvtJoystickConnected, sfEvtJoystickDisconnected,
-    sfEvtTouchBegan, sfEvtTouchMoved, sfEvtTouchEnded, sfEvtSensorChanged);
+    sfEvtMouseWheelScrolled, sfEvtMouseButtonPressed,
+    sfEvtMouseButtonReleased, sfEvtMouseMoved, sfEvtMouseMovedRaw,
+    sfEvtMouseEntered, sfEvtMouseLeft, sfEvtJoystickButtonPressed,
+    sfEvtJoystickButtonReleased, sfEvtJoystickMoved, sfEvtJoystickConnected,
+    sfEvtJoystickDisconnected, sfEvtTouchBegan, sfEvtTouchMoved,
+    sfEvtTouchEnded, sfEvtSensorChanged, sfEvtCount);
 
   TSfmlKeyCode = (sfKeyUnknown = -1, sfKeyA, sfKeyB, sfKeyC, sfKeyD,
     sfKeyE, sfKeyF, sfKeyG, sfKeyH, sfKeyI, sfKeyJ, sfKeyK, sfKeyL, sfKeyM,
@@ -133,10 +145,11 @@ type
   TSfmlKeyEvent = record
     EventType: TSfmlEventType;
     Code: TSfmlKeyCode;
-    Alt: LongBool;
-    Control: LongBool;
-    Shift: LongBool;
-    System: LongBool;
+    ScanCode: TSfmlScanCode;
+    Alt: ByteBool;
+    Control: ByteBool;
+    Shift: ByteBool;
+    System: ByteBool;
   end;
 
   TSfmlJoystickIdentification = record
@@ -159,11 +172,6 @@ type
     EventType: TSfmlEventType;
     Button: TSfmlMouseButton;
     X, Y: LongInt;
-  end;
-
-  TSfmlMouseWheelEvent = record
-    EventType: TSfmlEventType;
-    Delta, X, Y: LongInt;
   end;
 
   TSfmlMouseWheelScrollEvent = record
@@ -215,13 +223,12 @@ type
       3 : ( Text : TSfmlTextEvent );
       4 : ( MouseMove : TSfmlMouseMoveEvent );
       5 : ( MouseButton : TSfmlMouseButtonEvent );
-      6 : ( MouseWheel : TSfmlMouseWheelEvent );
-      7 : ( MouseWheelScroll : TSfmlMouseWheelScrollEvent );
-      8 : ( JoystickMove : TSfmlJoystickMoveEvent );
-      9 : ( JoystickButton : TSfmlJoystickButtonEvent );
-      10 : ( JoystickConnect : TSfmlJoystickConnectEvent );
-      11 : ( Touch : TSfmlTouchEvent );
-      12 : ( Sensor : TSfmlSensorEvent );
+      6 : ( MouseWheelScroll : TSfmlMouseWheelScrollEvent );
+      7 : ( JoystickMove : TSfmlJoystickMoveEvent );
+      8 : ( JoystickButton : TSfmlJoystickButtonEvent );
+      9 : ( JoystickConnect : TSfmlJoystickConnectEvent );
+      10 : ( Touch : TSfmlTouchEvent );
+      11 : ( Sensor : TSfmlSensorEvent );
     end;
   PSfmlEvent = ^TSfmlEvent;
 
@@ -257,15 +264,15 @@ type
   TSfmlVideoModeGetFullscreenModes = function (var Count: NativeUInt): PSfmlVideoMode; cdecl;
   TSfmlVideoModeIsValid = function (Mode: TSfmlVideoMode): LongBool; cdecl;
 
-  TSfmlWindowCreate = function (Mode: TSfmlVideoMode; const Title: PAnsiChar; Style: TSfmlWindowStyles; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl;
-  TSfmlWindowCreateUnicode = function (Mode: TSfmlVideoMode; const Title: PUCS4Char; Style: TSfmlWindowStyles; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl;
+  TSfmlWindowCreate = function (Mode: TSfmlVideoMode; const Title: PAnsiChar; Style: TSfmlWindowStyle; State: TSfmlWindowState; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl;
+  TSfmlWindowCreateUnicode = function (Mode: TSfmlVideoMode; const Title: PUCS4Char; Style: TSfmlWindowStyle; State: TSfmlWindowState; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl;
   TSfmlWindowCreateFromHandle = function (Handle: TSfmlWindowHandle; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl;
   TSfmlWindowDestroy = procedure (Window: PSfmlWindow); cdecl;
   TSfmlWindowClose = procedure (Window: PSfmlWindow); cdecl;
   TSfmlWindowIsOpen = function (const Window: PSfmlWindow): LongBool; cdecl;
   TSfmlWindowGetSettings = function (const Window: PSfmlWindow): TSfmlContextSettings; cdecl;
   TSfmlWindowPollEvent = function (Window: PSfmlWindow; var Event: TSfmlEvent): LongBool; cdecl;
-  TSfmlWindowWaitEvent = function (Window: PSfmlWindow; var Event: TSfmlEvent): LongBool; cdecl;
+  TSfmlWindowWaitEvent = function (Window: PSfmlWindow; Timeout: TSfmlTime; var Event: TSfmlEvent): LongBool; cdecl;
   TSfmlWindowGetPosition = function (const Window: PSfmlWindow): TSfmlVector2i; cdecl;
   TSfmlWindowSetPosition = procedure (Window: PSfmlWindow; Position: TSfmlVector2i); cdecl;
   TSfmlWindowGetSize = function (const Window: PSfmlWindow): TSfmlVector2u; cdecl;
@@ -284,7 +291,9 @@ type
   TSfmlWindowDisplay = procedure (Window: PSfmlWindow); cdecl;
   TSfmlWindowSetFramerateLimit = procedure (Window: PSfmlWindow; limit: Cardinal); cdecl;
   TSfmlWindowSetJoystickThreshold = procedure (Window: PSfmlWindow; Threshold: Single); cdecl;
-  TSfmlWindowGetSystemHandle = function (const Window: PSfmlWindow): TSfmlWindowHandle; cdecl;
+  TSfmlWindowGetNativeHandle = function (const Window: PSfmlWindow): TSfmlWindowHandle; cdecl;
+  TSfmlWindowSetMinimumSize = procedure (Window: PSfmlWindow; const MinimumSize: PSfmlVector2u); cdecl;
+  TSfmlWindowSetMaximumSize = procedure (Window: PSfmlWindow; const MaximumSize: PSfmlVector2u); cdecl;
 
 var
   SfmlContextCreate: TSfmlContextCreate;
@@ -345,7 +354,9 @@ var
   SfmlWindowDisplay: TSfmlWindowDisplay;
   SfmlWindowSetFramerateLimit: TSfmlWindowSetFramerateLimit;
   SfmlWindowSetJoystickThreshold: TSfmlWindowSetJoystickThreshold;
-  SfmlWindowGetSystemHandle: TSfmlWindowGetSystemHandle;
+  SfmlWindowGetNativeHandle: TSfmlWindowGetNativeHandle;
+  SfmlWindowSetMinimumSize: TSfmlWindowSetMinimumSize;
+  SfmlWindowSetMaximumSize: TSfmlWindowSetMaximumSize;
 {$ELSE}
   function SfmlContextCreate: PSfmlContext; cdecl; external CSfmlWindowLibrary name 'sfContext_create';
   procedure SfmlContextDestroy(Context: PSfmlContext); cdecl; external CSfmlWindowLibrary name 'sfContext_destroy';
@@ -378,15 +389,15 @@ var
   function SfmlVideoModeGetFullscreenModes(var Count: NativeUInt): PSfmlVideoMode; cdecl; external CSfmlWindowLibrary name 'sfVideoMode_getFullscreenModes';
   function SfmlVideoModeIsValid(Mode: TSfmlVideoMode): LongBool; cdecl; external CSfmlWindowLibrary name 'sfVideoMode_isValid';
 
-  function SfmlWindowCreate(Mode: TSfmlVideoMode; const Title: PAnsiChar; Style: TSfmlWindowStyles; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl; external CSfmlWindowLibrary name 'sfWindow_create';
-  function SfmlWindowCreateUnicode(Mode: TSfmlVideoMode; const Title: PUCS4Char; Style: TSfmlWindowStyles; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl; external CSfmlWindowLibrary name 'sfWindow_createUnicode';
+  function SfmlWindowCreate(Mode: TSfmlVideoMode; const Title: PAnsiChar; Style: TSfmlWindowStyle; State: TSfmlWindowState; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl; external CSfmlWindowLibrary name 'sfWindow_create';
+  function SfmlWindowCreateUnicode(Mode: TSfmlVideoMode; const Title: PUCS4Char; Style: TSfmlWindowStyle; State: TSfmlWindowState; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl; external CSfmlWindowLibrary name 'sfWindow_createUnicode';
   function SfmlWindowCreateFromHandle(Handle: TSfmlWindowHandle; const Settings: PSfmlContextSettings): PSfmlWindow; cdecl; external CSfmlWindowLibrary name 'sfWindow_createFromHandle';
   procedure SfmlWindowDestroy(Window: PSfmlWindow); cdecl; external CSfmlWindowLibrary name 'sfWindow_destroy';
   procedure SfmlWindowClose(Window: PSfmlWindow); cdecl; external CSfmlWindowLibrary name 'sfWindow_close';
   function SfmlWindowIsOpen(const Window: PSfmlWindow): LongBool; cdecl; external CSfmlWindowLibrary name 'sfWindow_isOpen';
   function SfmlWindowGetSettings(const Window: PSfmlWindow): TSfmlContextSettings; cdecl; external CSfmlWindowLibrary name 'sfWindow_getSettings';
   function SfmlWindowPollEvent(Window: PSfmlWindow; var Event: TSfmlEvent): LongBool; cdecl; external CSfmlWindowLibrary name 'sfWindow_pollEvent';
-  function SfmlWindowWaitEvent(Window: PSfmlWindow; var Event: TSfmlEvent): LongBool; cdecl; external CSfmlWindowLibrary name 'sfWindow_waitEvent';
+  function SfmlWindowWaitEvent(Window: PSfmlWindow; Timeout: TSfmlTime; var Event: TSfmlEvent): LongBool; cdecl; external CSfmlWindowLibrary name 'sfWindow_waitEvent';
   function SfmlWindowGetPosition(const Window: PSfmlWindow): TSfmlVector2i; cdecl; external CSfmlWindowLibrary name 'sfWindow_getPosition';
   procedure SfmlWindowSetPosition(Window: PSfmlWindow; Position: TSfmlVector2i); cdecl; external CSfmlWindowLibrary name 'sfWindow_setPosition';
   function SfmlWindowGetSize(const Window: PSfmlWindow): TSfmlVector2u; cdecl; external CSfmlWindowLibrary name 'sfWindow_getSize';
@@ -405,7 +416,9 @@ var
   procedure SfmlWindowRequestFocus(Window: PSfmlWindow); cdecl; external CSfmlWindowLibrary name 'sfWindow_requestFocus';
   function SfmlWindowHasFocus(const Window: PSfmlWindow): LongBool; cdecl; external CSfmlWindowLibrary name 'sfWindow_hasFocus';
   procedure SfmlWindowDisplay(Window: PSfmlWindow); cdecl; external CSfmlWindowLibrary name 'sfWindow_display';
-  function SfmlWindowGetSystemHandle(const Window: PSfmlWindow): TSfmlWindowHandle; cdecl; external CSfmlWindowLibrary name 'sfWindow_getSystemHandle';
+  function SfmlWindowGetNativeHandle(const Window: PSfmlWindow): TSfmlWindowHandle; cdecl; external CSfmlWindowLibrary name 'sfWindow_getNativeHandle';
+  procedure SfmlWindowSetMinimumSize(Window: PSfmlWindow; const MinimumSize: PSfmlVector2u); cdecl; external CSfmlWindowLibrary name 'sfWindow_setMinimumSize';
+  procedure SfmlWindowSetMaximumSize(Window: PSfmlWindow; const MaximumSize: PSfmlVector2u); cdecl; external CSfmlWindowLibrary name 'sfWindow_setMaximumSize';
 {$ENDIF}
 
 type
@@ -441,13 +454,13 @@ type
     procedure RequestFocus;
     function HasFocus: Boolean;
     procedure Display;
-    function GetSystemHandle: TSfmlWindowHandle;
+    function GetNativeHandle: TSfmlWindowHandle;
 
     procedure Close;
     function IsOpen: Boolean;
     function GetSettings: TSfmlContextSettings;
     function PollEvent(out Event: TSfmlEvent): Boolean;
-    function WaitEvent(out Event: TSfmlEvent): Boolean;
+    function WaitEvent(Timeout: TSfmlTime; out Event: TSfmlEvent): Boolean;
 
     property Position: TSfmlVector2i read GetPosition write SetPosition;
     property Size: TSfmlVector2u read GetSize write SetSize;
@@ -464,13 +477,13 @@ type
     procedure SetSize(Size: TSfmlVector2u);
   public
     constructor Create(VideoMode: TSfmlVideoMode; Title: AnsiString;
-      Style: TSfmlWindowStyles); overload;
+      Style: TSfmlWindowStyle = sfDefaultStyle; State: TSfmlWindowState = sfWindowed); overload;
     constructor Create(VideoMode: TSfmlVideoMode; Title: Unicodestring;
-      Style: TSfmlWindowStyles); overload;
+      Style: TSfmlWindowStyle = sfDefaultStyle; State: TSfmlWindowState = sfWindowed); overload;
     constructor Create(VideoMode: TSfmlVideoMode; Title: AnsiString;
-      Style: TSfmlWindowStyles; ContextSetting: PSfmlContextSettings); overload;
+      Style: TSfmlWindowStyle; State: TSfmlWindowState; ContextSetting: PSfmlContextSettings); overload;
     constructor Create(VideoMode: TSfmlVideoMode; Title: Unicodestring;
-      Style: TSfmlWindowStyles; ContextSetting: PSfmlContextSettings); overload;
+      Style: TSfmlWindowStyle; State: TSfmlWindowState; ContextSetting: PSfmlContextSettings); overload;
     constructor Create(Handle: TSfmlWindowHandle); overload;
     destructor Destroy; override;
 
@@ -478,7 +491,7 @@ type
     function IsOpen: Boolean;
     function GetSettings: TSfmlContextSettings;
     function PollEvent(out Event: TSfmlEvent): Boolean;
-    function WaitEvent(out Event: TSfmlEvent): Boolean;
+    function WaitEvent(Timeout: TSfmlTime; out Event: TSfmlEvent): Boolean;
     procedure SetTitle(const Title: AnsiString); overload;
     procedure SetTitle(const Title: UnicodeString); overload;
     procedure SetIcon(Width, Height: Cardinal; const Pixels: PByte);
@@ -490,11 +503,13 @@ type
     procedure SetFramerateLimit(Limit: Cardinal);
     procedure SetJoystickThreshold(Threshold: Single);
     function SetActive(Active: Boolean): Boolean;
+    procedure SetMinimumSize(const MinimumSize: PSfmlVector2u);
+    procedure SetMaximumSize(const MaximumSize: PSfmlVector2u);
 
     procedure RequestFocus;
     function HasFocus: Boolean;
     procedure Display;
-    function GetSystemHandle: TSfmlWindowHandle;
+    function GetNativeHandle: TSfmlWindowHandle;
 
     property Handle: PSfmlWindow read FHandle;
     property MousePosition: TSfmlVector2i read GetMousePosition write SetMousePosition;
@@ -554,30 +569,33 @@ end;
 { TSfmlWindow }
 
 constructor TSfmlWindow.Create(VideoMode: TSfmlVideoMode; Title: AnsiString;
-  Style: TSfmlWindowStyles);
+  Style: TSfmlWindowStyle; State: TSfmlWindowState);
 begin
-  FHandle := SfmlWindowCreate(VideoMode, PAnsiChar(Title), Style, nil);
+  FHandle := SfmlWindowCreate(VideoMode, PAnsiChar(Title), Style, State, nil);
 end;
 
 constructor TSfmlWindow.Create(VideoMode: TSfmlVideoMode; Title: UnicodeString;
-  Style: TSfmlWindowStyles);
+  Style: TSfmlWindowStyle; State: TSfmlWindowState);
 begin
   FHandle := SfmlWindowCreateUnicode(VideoMode,
-    PUCS4Char(UnicodeStringToUCS4String(Title)), Style, nil);
+    PUCS4Char(UnicodeStringToUCS4String(Title)), Style, State, nil);
 end;
 
 constructor TSfmlWindow.Create(VideoMode: TSfmlVideoMode; Title: AnsiString;
-  Style: TSfmlWindowStyles; ContextSetting: PSfmlContextSettings);
+  Style: TSfmlWindowStyle; State: TSfmlWindowState;
+  ContextSetting: PSfmlContextSettings);
 begin
-  FHandle := SfmlWindowCreate(VideoMode, PAnsiChar(Title), Style,
+  FHandle := SfmlWindowCreate(VideoMode, PAnsiChar(Title), Style, State,
     ContextSetting);
 end;
 
 constructor TSfmlWindow.Create(VideoMode: TSfmlVideoMode; Title: UnicodeString;
-  Style: TSfmlWindowStyles; ContextSetting: PSfmlContextSettings);
+  Style: TSfmlWindowStyle; State: TSfmlWindowState;
+  ContextSetting: PSfmlContextSettings);
 begin
   FHandle := SfmlWindowCreateUnicode(VideoMode,
-    PUCS4Char(UnicodeStringToUCS4String(Title)), Style, ContextSetting);
+    PUCS4Char(UnicodeStringToUCS4String(Title)), Style, State,
+    ContextSetting);
 end;
 
 constructor TSfmlWindow.Create(Handle: TSfmlWindowHandle);
@@ -621,9 +639,9 @@ begin
   Result := SfmlWindowGetSize(FHandle);
 end;
 
-function TSfmlWindow.GetSystemHandle: TSfmlWindowHandle;
+function TSfmlWindow.GetNativeHandle: TSfmlWindowHandle;
 begin
-  Result := SfmlWindowGetSystemHandle(FHandle);
+  Result := SfmlWindowGetNativeHandle(FHandle);
 end;
 
 function TSfmlWindow.HasFocus: Boolean;
@@ -664,6 +682,16 @@ end;
 procedure TSfmlWindow.SetJoystickThreshold(Threshold: Single);
 begin
   SfmlWindowSetJoystickThreshold(FHandle, Threshold);
+end;
+
+procedure TSfmlWindow.SetMinimumSize(const MinimumSize: PSfmlVector2u);
+begin
+  SfmlWindowSetMinimumSize(FHandle, MinimumSize);
+end;
+
+procedure TSfmlWindow.SetMaximumSize(const MaximumSize: PSfmlVector2u);
+begin
+  SfmlWindowSetMaximumSize(FHandle, MaximumSize);
 end;
 
 procedure TSfmlWindow.SetKeyRepeatEnabled(Enabled: Boolean);
@@ -716,9 +744,9 @@ begin
   SfmlWindowSetVisible(FHandle, Visible);
 end;
 
-function TSfmlWindow.WaitEvent(out Event: TSfmlEvent): Boolean;
+function TSfmlWindow.WaitEvent(Timeout: TSfmlTime; out Event: TSfmlEvent): Boolean;
 begin
-  Result := SfmlWindowWaitEvent(FHandle, Event);
+  Result := SfmlWindowWaitEvent(FHandle, Timeout, Event);
 end;
 
 {$IFDEF DynLink}
@@ -795,7 +823,9 @@ begin
       SfmlWindowDisplay := BindFunction('sfWindow_display');
       SfmlWindowSetFramerateLimit := BindFunction('sfWindow_setFramerateLimit');
       SfmlWindowSetJoystickThreshold := BindFunction('sfWindow_setJoystickThreshold');
-      SfmlWindowGetSystemHandle := BindFunction('sfWindow_getSystemHandle');
+      SfmlWindowGetNativeHandle := BindFunction('sfWindow_getNativeHandle');
+      SfmlWindowSetMinimumSize := BindFunction('sfWindow_setMinimumSize');
+      SfmlWindowSetMaximumSize := BindFunction('sfWindow_setMaximumSize');
     except
       FreeLibrary(CSfmlWindowHandle);
       CSfmlWindowHandle := 0;

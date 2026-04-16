@@ -71,7 +71,7 @@ begin
 
     // Create the main window
     OutputWindow := TSfmlWindow.Create(SfmlVideoMode(640, 480),
-      'SFML window with OpenGL', [sfTitleBar, sfClose], @ContextSettings);
+      'SFML window with OpenGL', sfTitleBar or sfClose, sfWindowed, @ContextSettings);
 
     // Make it the active window for OpenGL calls
     OutputWindow.SetActive(True);

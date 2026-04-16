@@ -25,7 +25,8 @@ begin
   if not SfmlVideoModeIsValid(Mode) then
     raise Exception.Create('Invalid video mode');
 
-  Window := SfmlRenderWindowCreate(Mode, 'SFML Window', [sfResize, sfClose], nil);
+  Window := SfmlRenderWindowCreate(Mode, 'SFML Window', sfResize or sfClose,
+    sfWindowed, nil);
   if not Assigned(Window) then
     raise Exception.Create('Window error');
 
@@ -33,18 +34,16 @@ begin
   Texture := SfmlTextureCreateFromFile('../Resources/OncaPintada.jpg', nil);
   if not Assigned(Texture) then
     raise Exception.Create('Texture error');
-  Sprite := SfmlSpriteCreate;
-  SfmlSpriteSetTexture(Sprite, texture, True);
+  Sprite := SfmlSpriteCreate(Texture);
 
   // Create a graphical text to display
   Font := SfmlFontCreateFromFile('../Resources/AdmirationPains.ttf');
   if not Assigned(Font) then
     raise Exception.Create('Font error');
-  Text := SfmlTextCreate;
+  Text := SfmlTextCreate(Font);
   SfmlTextSetString(Text, 'Hello World');
-  SfmlTextSetFont(Text, Font);
   SfmlTextSetCharacterSize(Text, 50);
-  SfmlTextSetColor(Text, SfmlBlack);
+  SfmlTextSetFillColor(Text, SfmlBlack);
   TextPos.X := 300;
   TextPos.Y := 20;
   SfmlTextSetPosition(Text, TextPos);

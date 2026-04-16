@@ -90,13 +90,26 @@ end;
 
 procedure TSceneNode.Draw(Target: TSfmlRenderTarget;
   States: PSfmlRenderStates = nil);
+var
+  LocalStates: TSfmlRenderStates;
+  NodeTransform: TSfmlTransform;
 begin
+  if Assigned(States) then
+    LocalStates := States^
+  else
+  begin
+    FillChar(LocalStates, SizeOf(LocalStates), 0);
+    LocalStates.BlendMode := SfmlBlendAlpha;
+    LocalStates.Transform := SfmlTransformIdentity;
+  end;
+
   // Apply transform of current node
-  States.Transform := States.Transform * Transform; // eventually use this in case of an error: SfmlTransformCombine(States.Transform, @Transform);
+  NodeTransform := Transform;
+  SfmlTransformCombine(LocalStates.Transform, @NodeTransform);
 
   // Draw node and children with changed transform
-  DrawCurrent(Target, States);
-  DrawChildren(Target, States);
+  DrawCurrent(Target, @LocalStates);
+  DrawChildren(Target, @LocalStates);
 end;
 
 procedure TSceneNode.DrawCurrent(Target: TSfmlRenderTarget;
@@ -116,17 +129,20 @@ end;
 
 function TSceneNode.GetWorldPosition: TSfmlVector2f;
 begin
-  Result := GetWorldTransform * SfmlVector2f(1, 1); // was SfmlVector2f( , )
+  Result := GetWorldTransform.TransformPoint(SfmlVector2f(0, 0));
 end;
 
 function TSceneNode.getWorldTransform: TSfmlTransform;
 var
   Node: TSceneNode;
+  NodeTransform: TSfmlTransform;
 begin
   Result := SfmlTransformIdentity;
   Node := Self;
   repeat
-    Result := Node.Transform * Result;
+    NodeTransform := Node.Transform;
+    SfmlTransformCombine(NodeTransform, @Result);
+    Result := NodeTransform;
     Node := Node.FParent;
   until Node = nil;
 end;
