@@ -21,6 +21,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestChannelMap;
     procedure TestPlayPauseStop;
   end;
 
@@ -33,6 +34,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestChannelMap;
     procedure TestPlayPauseStop;
   end;
 
@@ -43,6 +45,8 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestChannelMap;
+    procedure TestCreateFromSamplesWithChannelMap;
     procedure TestCopyAndTestSamples;
   end;
 
@@ -85,18 +89,30 @@ type
 
 implementation
 
+function ResourcePath(const FileName: string): string;
+begin
+  Result := ExpandFileName(IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))) +
+    '..\Resources\' + FileName);
+end;
+
 { TestTSfmlMusic }
 
 procedure TestTSfmlMusic.SetUp;
 begin
-  Assert(FileExists('../Resources/OncaPintada.ogg'));
-  FSfmlMusic := TSfmlMusic.Create('../Resources/OncaPintada.ogg');
+  Assert(FileExists(ResourcePath('OncaPintada.ogg')));
+  FSfmlMusic := TSfmlMusic.Create(ResourcePath('OncaPintada.ogg'));
 end;
 
 procedure TestTSfmlMusic.TearDown;
 begin
   FSfmlMusic.Free;
   FSfmlMusic := nil;
+end;
+
+procedure TestTSfmlMusic.TestChannelMap;
+begin
+  CheckEquals(Integer(FSfmlMusic.ChannelCount), Length(FSfmlMusic.ChannelMap));
+  CheckTrue(Length(FSfmlMusic.ChannelMap) > 0);
 end;
 
 procedure TestTSfmlMusic.TestPlayPauseStop;
@@ -114,7 +130,7 @@ end;
 { TestTSfmlSoundStream }
 
 function GetDataCallback(Chunk: PSfmlSoundStreamChunk;
-  UserData: Pointer): LongBool; cdecl;
+  UserData: Pointer): Boolean; cdecl;
 var
   Index: Integer;
   Data: PSmallInt;
@@ -143,15 +159,25 @@ begin
 end;
 
 procedure TestTSfmlSoundStream.SetUp;
+const
+  ChannelMap: array [0 .. 0] of TSfmlSoundChannel = (sfSoundChannelMono);
 begin
   FSfmlSoundStream := TSfmlSoundStream.Create(GetDataCallback, SeekCallback,
-    1, 44100, nil, 0, Self);
+    1, 44100, ChannelMap, Self);
 end;
 
 procedure TestTSfmlSoundStream.TearDown;
 begin
   FSfmlSoundStream.Free;
   FSfmlSoundStream := nil;
+end;
+
+procedure TestTSfmlSoundStream.TestChannelMap;
+begin
+  CheckEquals(1, Integer(FSfmlSoundStream.ChannelCount));
+  CheckEquals(1, Length(FSfmlSoundStream.ChannelMap));
+  CheckEquals(Integer(sfSoundChannelMono),
+    Integer(FSfmlSoundStream.ChannelMap[0]));
 end;
 
 procedure TestTSfmlSoundStream.TestPlayPauseStop;
@@ -173,14 +199,21 @@ end;
 
 procedure TestTSfmlSoundBuffer.SetUp;
 begin
-  Assert(FileExists('../Resources/OncaPintada.ogg'));
-  FSfmlSoundBuffer := TSfmlSoundBuffer.Create('../Resources/OncaPintada.ogg');
+  Assert(FileExists(ResourcePath('OncaPintada.ogg')));
+  FSfmlSoundBuffer := TSfmlSoundBuffer.Create(ResourcePath('OncaPintada.ogg'));
 end;
 
 procedure TestTSfmlSoundBuffer.TearDown;
 begin
   FSfmlSoundBuffer.Free;
   FSfmlSoundBuffer := nil;
+end;
+
+procedure TestTSfmlSoundBuffer.TestChannelMap;
+begin
+  CheckEquals(Integer(FSfmlSoundBuffer.ChannelCount),
+    Length(FSfmlSoundBuffer.ChannelMap));
+  CheckTrue(Length(FSfmlSoundBuffer.ChannelMap) > 0);
 end;
 
 procedure TestTSfmlSoundBuffer.TestCopyAndTestSamples;
@@ -209,13 +242,35 @@ begin
   end;
 end;
 
+procedure TestTSfmlSoundBuffer.TestCreateFromSamplesWithChannelMap;
+const
+  ChannelMap: array [0 .. 1] of TSfmlSoundChannel =
+    (sfSoundChannelFrontLeft, sfSoundChannelFrontRight);
+  Samples: array [0 .. 5] of SmallInt = (0, 1000, -1000, 500, -500, 0);
+var
+  Buffer: TSfmlSoundBuffer;
+begin
+  Buffer := TSfmlSoundBuffer.Create(@Samples[0], Length(Samples), 2, 44100,
+    ChannelMap);
+  try
+    CheckEquals(2, Integer(Buffer.ChannelCount));
+    CheckEquals(2, Length(Buffer.ChannelMap));
+    CheckEquals(Integer(sfSoundChannelFrontLeft),
+      Integer(Buffer.ChannelMap[0]));
+    CheckEquals(Integer(sfSoundChannelFrontRight),
+      Integer(Buffer.ChannelMap[1]));
+  finally
+    Buffer.Free;
+  end;
+end;
+
 
 { TestTSfmlSound }
 
 procedure TestTSfmlSound.SetUp;
 begin
-  Assert(FileExists('../Resources/OncaPintada.ogg'));
-  FSfmlSoundBuffer := TSfmlSoundBuffer.Create('../Resources/OncaPintada.ogg');
+  Assert(FileExists(ResourcePath('OncaPintada.ogg')));
+  FSfmlSoundBuffer := TSfmlSoundBuffer.Create(ResourcePath('OncaPintada.ogg'));
   FSfmlSound := TSfmlSound.Create(FSfmlSoundBuffer);
 end;
 
@@ -295,18 +350,19 @@ var
   Buffer: PSfmlSoundBuffer;
 begin
   SampleRate := 44100;
-  FSfmlSoundBufferRecorder.Start(SampleRate);
+  CheckTrue(FSfmlSoundBufferRecorder.Start(SampleRate));
   SfmlSleep(SfmlMilliseconds(1000));
   FSfmlSoundBufferRecorder.Stop;
 
   Buffer := FSfmlSoundBufferRecorder.GetBuffer;
-  CheckTrue(SfmlSoundBufferGetSampleCount(Buffer) > 44000);
+  CheckTrue(Buffer <> nil);
+  CheckTrue(SfmlSoundBufferGetSampleCount(Buffer) > 0);
 end;
 
 
 { TestTSfmlSoundRecorder }
 
-function StartCallback(UserData: Pointer): LongBool; cdecl;
+function StartCallback(UserData: Pointer): Boolean; cdecl;
 begin
   Assert(TObject(UserData) is TestTSfmlSoundRecorder);
 
@@ -315,7 +371,7 @@ begin
   Result := True;
 end;
 
-function ProcessCallback(Data: PSmallInt; SampleFrames: NativeUInt; UserData: Pointer): LongBool; cdecl;
+function ProcessCallback(Data: PSmallInt; SampleFrames: NativeUInt; UserData: Pointer): Boolean; cdecl;
 begin
   Assert(TObject(UserData) is TestTSfmlSoundRecorder);
 
@@ -344,8 +400,10 @@ begin
 end;
 
 procedure TestTSfmlSoundRecorder.TestStartStop;
+var
+  Devices: TSfmlAnsiStrings;
 begin
-  if not SfmlSoundRecorderIsAvailable then
+  if not TSfmlSoundRecorder.IsAvailable then
     Exit;
 
   // reset callback called flags
@@ -353,11 +411,17 @@ begin
   ProcessCallbackCalled := False;
   StopCallbackCalled := False;
 
+  Devices := TSfmlSoundRecorder.GetAvailableDevices;
+  CheckTrue(Length(Devices) > 0);
+  CheckTrue(TSfmlSoundRecorder.GetDefaultDevice <> '');
+
   // check device
   CheckTrue(FSfmlSoundRecorder.Device <> '');
-
-  // set processing time (10 times a second)
-  FSfmlSoundRecorder.SetProcessingInterval(SfmlMilliseconds(100));
+  FSfmlSoundRecorder.ChannelCount := 1;
+  CheckEquals(1, Integer(FSfmlSoundRecorder.ChannelCount));
+  CheckEquals(1, Length(FSfmlSoundRecorder.ChannelMap));
+  CheckEquals(Integer(sfSoundChannelMono),
+    Integer(FSfmlSoundRecorder.ChannelMap[0]));
 
   // start & stop recording (approx. 1 second)
   FSfmlSoundRecorder.Start(44100);

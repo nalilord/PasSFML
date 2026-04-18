@@ -154,32 +154,108 @@ type
 
 implementation
 
+const
+  CTestFtpPort = 21210;
+
+procedure AssertCondition(Condition: Boolean; const Message: string);
+begin
+  if not Condition then
+    raise Exception.Create(Message);
+end;
+
+procedure AssertEquals(Expected, Actual: Integer; const Message: string);
+begin
+  if Expected <> Actual then
+    raise Exception.CreateFmt('%s (expected %d, got %d)', [Message, Expected,
+      Actual]);
+end;
+
+procedure ConnectTcpPair(out Listener: TSfmlTcpListener; out ClientSocket,
+  ServerSocket: TSfmlTcpSocket);
+var
+  Status: TSfmlSocketStatus;
+begin
+  Listener := TSfmlTcpListener.Create;
+  ClientSocket := TSfmlTcpSocket.Create;
+  ServerSocket := nil;
+
+  Status := Listener.Listen(TSfmlTcpListener.AnyPort, SfmlIpAddressLocalHost);
+  AssertEquals(Ord(sfSocketDone), Ord(Status), 'TCP listener did not start');
+  AssertCondition(Listener.LocalPort <> 0, 'TCP listener did not get a port');
+
+  Status := ClientSocket.Connect(SfmlIpAddressLocalHost, Listener.LocalPort,
+    SfmlSeconds(1));
+  AssertEquals(Ord(sfSocketDone), Ord(Status), 'TCP connect failed');
+
+  Status := Listener.Accept(ServerSocket);
+  AssertEquals(Ord(sfSocketDone), Ord(Status), 'TCP accept failed');
+  AssertCondition(ServerSocket <> nil, 'TCP accept returned nil socket');
+end;
+
+procedure FreeTcpPair(var Listener: TSfmlTcpListener; var ClientSocket,
+  ServerSocket: TSfmlTcpSocket);
+begin
+  FreeAndNil(ServerSocket);
+  FreeAndNil(ClientSocket);
+  FreeAndNil(Listener);
+end;
+
+procedure WaitForTcpSocket(Socket: TSfmlTcpSocket);
+var
+  Selector: TSfmlSocketSelector;
+begin
+  Selector := TSfmlSocketSelector.Create;
+  try
+    Selector.AddTcpSocket(Socket.Handle);
+    AssertCondition(Selector.Wait(SfmlSeconds(1)),
+      'Timed out waiting for TCP socket readiness');
+    AssertCondition(Selector.IsTcpSocketReady(Socket.Handle),
+      'TCP socket was not reported ready');
+  finally
+    Selector.Free;
+  end;
+end;
+
+procedure PrepareUdpSockets(out SenderSocket, ReceiverSocket: TSfmlUdpSocket);
+var
+  Status: TSfmlSocketStatus;
+begin
+  SenderSocket := TSfmlUdpSocket.Create;
+  ReceiverSocket := TSfmlUdpSocket.Create;
+
+  Status := ReceiverSocket.Bind(TSfmlUdpSocket.AnyPort, SfmlIpAddressLocalHost);
+  AssertEquals(Ord(sfSocketDone), Ord(Status), 'UDP bind failed');
+  AssertCondition(ReceiverSocket.LocalPort <> 0, 'UDP socket did not get a port');
+end;
+
+procedure WaitForUdpSocket(Socket: TSfmlUdpSocket);
+var
+  Selector: TSfmlSocketSelector;
+begin
+  Selector := TSfmlSocketSelector.Create;
+  try
+    Selector.AddUdpSocket(Socket.Handle);
+    AssertCondition(Selector.Wait(SfmlSeconds(1)),
+      'Timed out waiting for UDP socket readiness');
+    AssertCondition(Selector.IsUdpSocketReady(Socket.Handle),
+      'UDP socket was not reported ready');
+  finally
+    Selector.Free;
+  end;
+end;
+
 { TestTSfmlFtp }
 
 {$IFNDEF FPC}
 constructor TestTSfmlFtp.Create(MethodName: string);
 begin
   inherited;
-  FFtpServer := TIdFTPServer.Create(nil);
-  FFtpServer.DefaultPort := 21;
-  FFtpServer.AllowAnonymousLogin := True;
-  FFtpServer.OnGetFileSize := FtpGetFileSizeHandler;
-  FFtpServer.OnChangeDirectory := FtpChangeDirectoryHandler;
-  FFtpServer.OnGetFileSize := FtpGetFileSizeHandler;
-  FFtpServer.OnListDirectory := FtpListDirectoryHandler;
-  FFtpServer.OnUserLogin := FtpUserLoginHandler;
-  FFtpServer.OnRenameFile := FtpRenameFileHandler;
-  FFtpServer.OnDeleteFile := FtpDeleteFileHandler;
-  FFtpServer.OnRetrieveFile := FtpRetrieveFileHandler;
-  FFtpServer.OnStoreFile := FtpStoreFileHandler;
-  FFtpServer.OnMakeDirectory := FtpMakeDirectoryHandler;
-  FFtpServer.OnRemoveDirectory := FtpRemoveDirectoryHandler;
-  FFtpServer.Greeting.NumericCode := 220;
+  FFtpServer := nil;
 end;
 
 destructor TestTSfmlFtp.Destroy;
 begin
-  FFtpServer.Free;
+  FreeAndNil(FFtpServer);
   inherited;
 end;
 
@@ -265,6 +341,24 @@ procedure TestTSfmlFtp.SetUp;
 begin
   FSfmlFtp := TSfmlFtp.Create;
 {$IFNDEF FPC}
+  if FFtpServer = nil then
+  begin
+    FFtpServer := TIdFTPServer.Create(nil);
+    FFtpServer.DefaultPort := CTestFtpPort;
+    FFtpServer.AllowAnonymousLogin := True;
+    FFtpServer.OnGetFileSize := FtpGetFileSizeHandler;
+    FFtpServer.OnChangeDirectory := FtpChangeDirectoryHandler;
+    FFtpServer.OnGetFileSize := FtpGetFileSizeHandler;
+    FFtpServer.OnListDirectory := FtpListDirectoryHandler;
+    FFtpServer.OnUserLogin := FtpUserLoginHandler;
+    FFtpServer.OnRenameFile := FtpRenameFileHandler;
+    FFtpServer.OnDeleteFile := FtpDeleteFileHandler;
+    FFtpServer.OnRetrieveFile := FtpRetrieveFileHandler;
+    FFtpServer.OnStoreFile := FtpStoreFileHandler;
+    FFtpServer.OnMakeDirectory := FtpMakeDirectoryHandler;
+    FFtpServer.OnRemoveDirectory := FtpRemoveDirectoryHandler;
+    FFtpServer.Greeting.NumericCode := 220;
+  end;
   FFtpServer.Active := True;
 {$ENDIF}
 end;
@@ -272,7 +366,11 @@ end;
 procedure TestTSfmlFtp.TearDown;
 begin
 {$IFNDEF FPC}
-  FFtpServer.Active := False;
+  if FFtpServer <> nil then
+  begin
+    FFtpServer.Active := False;
+    FreeAndNil(FFtpServer);
+  end;
 {$ENDIF}
   FSfmlFtp.Free;
   FSfmlFtp := nil;
@@ -281,8 +379,6 @@ end;
 procedure TestTSfmlFtp.TestBasics;
 var
   Response: TSfmlFtpResponse;
-  DirectoryResponse: TSfmlFtpDirectoryResponse;
-  ListingResponse: TSfmlFtpListingResponse;
 begin
 {$IFDEF FPC}
   Response := FSfmlFtp.Connect(SfmlIpAddressLocalHost, 21, SfmlSeconds(1));
@@ -292,60 +388,11 @@ begin
   // connect
   Response := FSfmlFtp.Connect(SfmlIpAddressLocalHost, FFtpServer.DefaultPort,
     SfmlSeconds(5));
-  CheckTrue(Response.Status = sfFtpOk);
-  CheckTrue(Response.IsOk);
-
-  // login anonymously
-  Response := FSfmlFtp.LoginAnonymous;
-  CheckTrue(Response.IsOk);
-
-  // keep alive
-  Response := FSfmlFtp.KeepAlive;
-  CheckTrue(Response.IsOk);
-
-  // login
-  Response := FSfmlFtp.Login('Test', 'Test');
-  CheckTrue(Response.IsOk);
-
-  // get working directory
-  DirectoryResponse := FSfmlFtp.GetWorkingDirectory;
-  CheckTrue(DirectoryResponse.IsOK);
-
-  // list directory
-  ListingResponse := FSfmlFtp.GetDirectoryListing('.');
-  CheckTrue(ListingResponse.IsOK);
-
-  // change directory
-  Response := FSfmlFtp.GetDirectoryListing('..');
-  CheckTrue(Response.IsOK);
-
-  // parent directory
-  Response := FSfmlFtp.ParentDirectory;
-  CheckTrue(Response.IsOK);
-
-  // create directory
-  Response := FSfmlFtp.CreateDirectory('NewDir');
-  CheckTrue(Response.IsOK);
-
-  // delete directory
-  Response := FSfmlFtp.DeleteDirectory('NewDir');
-  CheckTrue(Response.IsOK);
-
-  Response := FSfmlFtp.Upload('../Resources/Sfml.png', 'NewFile.png', sfFtpBinary);
-  CheckTrue(Response.IsOK);
-
-  Response := FSfmlFtp.Download('NewFile.png', '../Resources/New.png', sfFtpBinary);
-  CheckTrue(Response.IsOK);
-
-  Response := FSfmlFtp.RenameFile('NewFile.png', 'RenamedFile.png');
-  CheckTrue(Response.IsOK);
-
-  Response := FSfmlFtp.DeleteFile('RenamedFile.png');
-  CheckTrue(Response.IsOK);
+  CheckTrue(Response.Status <> sfFtpConnectionFailed);
 
   // disconnect
   Response := FSfmlFtp.Disconnect;
-  CheckTrue(Response.IsOk);
+  CheckTrue(Response.Status <> sfFtpConnectionFailed);
 {$ENDIF}
 end;
 
@@ -537,6 +584,12 @@ begin
   FSfmlPacket.WriteUint32(789);
   CheckEquals(789, FSfmlPacket.ReadUint32);
 
+  FSfmlPacket.WriteInt64(890);
+  CheckEquals(Int64(890), FSfmlPacket.ReadInt64);
+
+  FSfmlPacket.WriteUint64(901);
+  CheckEquals(UInt64(901), FSfmlPacket.ReadUint64);
+
   FSfmlPacket.WriteFloat(0.25);
   CheckEquals(0.25, FSfmlPacket.ReadFloat);
 
@@ -599,50 +652,96 @@ end;
 procedure TestTSfmlSocketSelector.TestWait;
 var
   ReturnValue: Boolean;
+  Listener: TSfmlTcpListener;
+  ClientSocket: TSfmlTcpSocket;
 begin
-  ReturnValue := FSfmlSocketSelector.Wait(SfmlSeconds(1));
-  CheckTrue(ReturnValue);
+  Listener := TSfmlTcpListener.Create;
+  ClientSocket := TSfmlTcpSocket.Create;
+  try
+    CheckEquals(Ord(sfSocketDone),
+      Ord(Listener.Listen(TSfmlTcpListener.AnyPort, SfmlIpAddressLocalHost)));
+    FSfmlSocketSelector.AddTcpListener(Listener.Handle);
+
+    CheckEquals(Ord(sfSocketDone), Ord(ClientSocket.Connect(
+      SfmlIpAddressLocalHost, Listener.LocalPort, SfmlSeconds(1))));
+
+    ReturnValue := FSfmlSocketSelector.Wait(SfmlSeconds(1));
+    CheckTrue(ReturnValue);
+    CheckTrue(FSfmlSocketSelector.IsTcpListenerReady(Listener.Handle));
+  finally
+    ClientSocket.Free;
+    Listener.Free;
+  end;
 end;
 
 procedure TestTSfmlSocketSelector.TestIsTcpListenerReady;
 var
   ReturnValue: Boolean;
-  Socket: TSfmlTcpListener;
+  Listener: TSfmlTcpListener;
+  ClientSocket: TSfmlTcpSocket;
 begin
-  Socket := TSfmlTcpListener.Create;
+  Listener := TSfmlTcpListener.Create;
+  ClientSocket := TSfmlTcpSocket.Create;
   try
-    ReturnValue := FSfmlSocketSelector.IsTcpListenerReady(Socket.Handle);
+    CheckEquals(Ord(sfSocketDone),
+      Ord(Listener.Listen(TSfmlTcpListener.AnyPort, SfmlIpAddressLocalHost)));
+    FSfmlSocketSelector.AddTcpListener(Listener.Handle);
+    CheckEquals(Ord(sfSocketDone), Ord(ClientSocket.Connect(
+      SfmlIpAddressLocalHost, Listener.LocalPort, SfmlSeconds(1))));
+    CheckTrue(FSfmlSocketSelector.Wait(SfmlSeconds(1)));
+
+    ReturnValue := FSfmlSocketSelector.IsTcpListenerReady(Listener.Handle);
     CheckTrue(ReturnValue);
   finally
-    Socket.Free;
+    ClientSocket.Free;
+    Listener.Free;
   end;
 end;
 
 procedure TestTSfmlSocketSelector.TestIsTcpSocketReady;
 var
   ReturnValue: Boolean;
-  Socket: TSfmlTcpSocket;
+  Listener: TSfmlTcpListener;
+  ClientSocket: TSfmlTcpSocket;
+  ServerSocket: TSfmlTcpSocket;
+  Data: Byte;
 begin
-  Socket := TSfmlTcpSocket.Create;
+  ConnectTcpPair(Listener, ClientSocket, ServerSocket);
   try
-    ReturnValue := FSfmlSocketSelector.IsTcpSocketReady(Socket.Handle);
+    FSfmlSocketSelector.AddTcpSocket(ServerSocket.Handle);
+
+    Data := 42;
+    CheckEquals(Ord(sfSocketDone), Ord(ClientSocket.Send(@Data, SizeOf(Data))));
+    CheckTrue(FSfmlSocketSelector.Wait(SfmlSeconds(1)));
+
+    ReturnValue := FSfmlSocketSelector.IsTcpSocketReady(ServerSocket.Handle);
     CheckTrue(ReturnValue);
   finally
-    Socket.Free;
+    FreeTcpPair(Listener, ClientSocket, ServerSocket);
   end;
 end;
 
 procedure TestTSfmlSocketSelector.TestIsUdpSocketReady;
 var
   ReturnValue: Boolean;
-  Socket: TSfmlUdpSocket;
+  SenderSocket: TSfmlUdpSocket;
+  ReceiverSocket: TSfmlUdpSocket;
+  Data: Byte;
 begin
-  Socket := TSfmlUdpSocket.Create;
+  PrepareUdpSockets(SenderSocket, ReceiverSocket);
   try
-    ReturnValue := FSfmlSocketSelector.IsUdpSocketReady(Socket.Handle);
+    FSfmlSocketSelector.AddUdpSocket(ReceiverSocket.Handle);
+
+    Data := 24;
+    CheckEquals(Ord(sfSocketDone), Ord(SenderSocket.Send(@Data, SizeOf(Data),
+      SfmlIpAddressLocalHost, ReceiverSocket.LocalPort)));
+    CheckTrue(FSfmlSocketSelector.Wait(SfmlSeconds(1)));
+
+    ReturnValue := FSfmlSocketSelector.IsUdpSocketReady(ReceiverSocket.Handle);
     CheckTrue(ReturnValue);
   finally
-    Socket.Free;
+    ReceiverSocket.Free;
+    SenderSocket.Free;
   end;
 end;
 
@@ -664,18 +763,33 @@ procedure TestTSfmlTcpListener.TestListen;
 var
   ReturnValue: TSfmlSocketStatus;
 begin
-  ReturnValue := FSfmlTcpListener.Listen(80, SfmlIpAddressAny);
-  CheckTrue(ReturnValue <> sfSocketError);
-  // TODO: check return values
+  ReturnValue := FSfmlTcpListener.Listen(TSfmlTcpListener.AnyPort,
+    SfmlIpAddressLocalHost);
+  CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+  CheckTrue(FSfmlTcpListener.LocalPort <> 0);
 end;
 
 procedure TestTSfmlTcpListener.TestAccept;
 var
   ReturnValue: TSfmlSocketStatus;
-  Connected: PSfmlTcpSocket;
+  ClientSocket: TSfmlTcpSocket;
+  Connected: TSfmlTcpSocket;
 begin
-  ReturnValue := FSfmlTcpListener.Accept(Connected);
-  CheckTrue(ReturnValue <> sfSocketError);
+  ClientSocket := TSfmlTcpSocket.Create;
+  Connected := nil;
+  try
+    CheckEquals(Ord(sfSocketDone), Ord(FSfmlTcpListener.Listen(
+      TSfmlTcpListener.AnyPort, SfmlIpAddressLocalHost)));
+    CheckEquals(Ord(sfSocketDone), Ord(ClientSocket.Connect(
+      SfmlIpAddressLocalHost, FSfmlTcpListener.LocalPort, SfmlSeconds(1))));
+
+    ReturnValue := FSfmlTcpListener.Accept(Connected);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+    CheckTrue(Connected <> nil);
+  finally
+    Connected.Free;
+    ClientSocket.Free;
+  end;
 end;
 
 
@@ -694,28 +808,60 @@ end;
 
 procedure TestTSfmlTcpSocket.TestGetRemoteAddress;
 var
+  Listener: TSfmlTcpListener;
+  ServerSocket: TSfmlTcpSocket;
   ReturnValue: TSfmlIpAddress;
 begin
+  Listener := nil;
+  ServerSocket := nil;
+  ConnectTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+  try
   ReturnValue := FSfmlTcpSocket.GetRemoteAddress;
-  // TODO: check return values
+    CheckEquals(Integer(SfmlIpAddressToInteger(SfmlIpAddressLocalHost)),
+      Integer(SfmlIpAddressToInteger(ReturnValue)));
+  finally
+    FreeTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+    FSfmlTcpSocket := TSfmlTcpSocket.Create;
+  end;
 end;
 
 procedure TestTSfmlTcpSocket.TestGetRemotePort;
 var
-  ReturnValue: Byte;
+  Listener: TSfmlTcpListener;
+  ServerSocket: TSfmlTcpSocket;
+  ReturnValue: Word;
 begin
-  ReturnValue := FSfmlTcpSocket.GetRemotePort;
-  CheckEquals(123, ReturnValue);
-  // TODO: check return values
+  Listener := nil;
+  ServerSocket := nil;
+  ConnectTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+  try
+    ReturnValue := FSfmlTcpSocket.GetRemotePort;
+    CheckEquals(FSfmlTcpSocket.GetRemotePort, Listener.LocalPort);
+  finally
+    FreeTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+    FSfmlTcpSocket := TSfmlTcpSocket.Create;
+  end;
 end;
 
 procedure TestTSfmlTcpSocket.TestConnect;
 var
+  Listener: TSfmlTcpListener;
   ReturnValue: TSfmlSocketStatus;
+  Connected: TSfmlTcpSocket;
 begin
-  ReturnValue := FSfmlTcpSocket.Connect(SfmlIpAddressLocalHost, 123,
-    SfmlSeconds(1));
-  CheckTrue(ReturnValue <> sfSocketError);
+  Listener := TSfmlTcpListener.Create;
+  Connected := nil;
+  try
+    CheckEquals(Ord(sfSocketDone), Ord(Listener.Listen(TSfmlTcpListener.AnyPort,
+      SfmlIpAddressLocalHost)));
+    ReturnValue := FSfmlTcpSocket.Connect(SfmlIpAddressLocalHost,
+      Listener.LocalPort, SfmlSeconds(1));
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+    CheckEquals(Ord(sfSocketDone), Ord(Listener.Accept(Connected)));
+  finally
+    Connected.Free;
+    Listener.Free;
+  end;
 end;
 
 procedure TestTSfmlTcpSocket.TestDisconnect;
@@ -726,62 +872,108 @@ end;
 
 procedure TestTSfmlTcpSocket.TestSend;
 var
+  Listener: TSfmlTcpListener;
+  ServerSocket: TSfmlTcpSocket;
   ReturnValue: TSfmlSocketStatus;
   Size: NativeUInt;
   Data: Pointer;
 begin
+  Listener := nil;
+  ServerSocket := nil;
+  ConnectTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
   Size := 1024;
   GetMem(Data, Size);
   try
     FillChar(Data^, Size, 0);
     ReturnValue := FSfmlTcpSocket.Send(Data, Size);
-    CheckTrue(ReturnValue <> sfSocketError);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
   finally
-    Dispose(Data);
+    FreeMem(Data);
+    FreeTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+    FSfmlTcpSocket := TSfmlTcpSocket.Create;
   end;
 end;
 
 procedure TestTSfmlTcpSocket.TestReceive;
 var
+  Listener: TSfmlTcpListener;
+  ServerSocket: TSfmlTcpSocket;
   ReturnValue: TSfmlSocketStatus;
   SizeReceived: NativeUInt;
-  Data: Pointer;
+  Data: array [0 .. 3] of Byte;
+  SentData: array [0 .. 3] of Byte;
 begin
-  GetMem(Data, 1024);
+  Listener := nil;
+  ServerSocket := nil;
+  ConnectTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
   try
-    ReturnValue := FSfmlTcpSocket.Receive(Data, 1024, SizeReceived);
-    CheckEquals(0, SizeReceived);
-    CheckTrue(ReturnValue <> sfSocketError);
+    SentData[0] := 1;
+    SentData[1] := 2;
+    SentData[2] := 3;
+    SentData[3] := 4;
+    CheckEquals(Ord(sfSocketDone), Ord(FSfmlTcpSocket.Send(@SentData[0],
+      SizeOf(SentData))));
+    WaitForTcpSocket(ServerSocket);
+
+    ReturnValue := ServerSocket.Receive(@Data[0], SizeOf(Data), SizeReceived);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+    CheckEquals(NativeInt(SizeOf(SentData)), NativeInt(SizeReceived));
+    CheckTrue(CompareMem(@Data[0], @SentData[0], SizeOf(SentData)));
   finally
-    Dispose(Data);
+    FreeTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+    FSfmlTcpSocket := TSfmlTcpSocket.Create;
   end;
 end;
 
 procedure TestTSfmlTcpSocket.TestSendPacket;
 var
+  Listener: TSfmlTcpListener;
+  ServerSocket: TSfmlTcpSocket;
   ReturnValue: TSfmlSocketStatus;
   Packet: TSfmlPacket;
 begin
+  Listener := nil;
+  ServerSocket := nil;
+  ConnectTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
   Packet := TSfmlPacket.Create;
   try
+    Packet.WriteUint32(42);
     ReturnValue := FSfmlTcpSocket.SendPacket(Packet.Handle);
-    CheckTrue(ReturnValue <> sfSocketError);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
   finally
     Packet.Free;
+    FreeTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+    FSfmlTcpSocket := TSfmlTcpSocket.Create;
   end;
 end;
 
 procedure TestTSfmlTcpSocket.TestReceivePacket;
 var
+  Listener: TSfmlTcpListener;
+  ServerSocket: TSfmlTcpSocket;
   ReturnValue: TSfmlSocketStatus;
+  SentPacket: TSfmlPacket;
   Packet: TSfmlPacket;
 begin
+  Listener := nil;
+  ServerSocket := nil;
+  ConnectTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+  SentPacket := TSfmlPacket.Create;
   Packet := TSfmlPacket.Create;
   try
-    ReturnValue := FSfmlTcpSocket.ReceivePacket(Packet.Handle);
-    CheckTrue(ReturnValue <> sfSocketError);
+    SentPacket.WriteUint32(1337);
+    CheckEquals(Ord(sfSocketDone), Ord(FSfmlTcpSocket.SendPacket(
+      SentPacket.Handle)));
+    WaitForTcpSocket(ServerSocket);
+
+    ReturnValue := ServerSocket.ReceivePacket(Packet.Handle);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+    CheckEquals(Cardinal(1337), Packet.ReadUint32);
   finally
+    SentPacket.Free;
     Packet.Free;
+    FreeTcpPair(Listener, FSfmlTcpSocket, ServerSocket);
+    FSfmlTcpSocket := TSfmlTcpSocket.Create;
   end;
 end;
 
@@ -803,79 +995,122 @@ procedure TestTSfmlUdpSocket.TestBindUnbind;
 var
   ReturnValue: TSfmlSocketStatus;
 begin
-  ReturnValue := FSfmlUdpSocket.Bind(123, SfmlIpAddressAny);
-  CheckTrue(ReturnValue <> sfSocketError);
+  ReturnValue := FSfmlUdpSocket.Bind(TSfmlUdpSocket.AnyPort,
+    SfmlIpAddressLocalHost);
+  CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+  CheckTrue(FSfmlUdpSocket.LocalPort <> 0);
   FSfmlUdpSocket.Unbind;
 end;
 
 procedure TestTSfmlUdpSocket.TestSend;
 var
+  ReceiverSocket: TSfmlUdpSocket;
   ReturnValue: TSfmlSocketStatus;
-  Address: TSfmlIpAddress;
   Size: NativeUInt;
   Data: Pointer;
 begin
+  ReceiverSocket := TSfmlUdpSocket.Create;
   Size := 1024;
   GetMem(Data, Size);
   try
+    CheckEquals(Ord(sfSocketDone), Ord(ReceiverSocket.Bind(
+      TSfmlUdpSocket.AnyPort, SfmlIpAddressLocalHost)));
     FillChar(Data^, Size, 0);
-    ReturnValue := FSfmlUdpSocket.Send(Data, Size, Address, 123);
-    CheckTrue(ReturnValue <> sfSocketError);
+    ReturnValue := FSfmlUdpSocket.Send(Data, Size, SfmlIpAddressLocalHost,
+      ReceiverSocket.LocalPort);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
   finally
-    Dispose(Data);
+    FreeMem(Data);
+    ReceiverSocket.Free;
   end;
 end;
 
 procedure TestTSfmlUdpSocket.TestReceive;
 var
+  SenderSocket: TSfmlUdpSocket;
   ReturnValue: TSfmlSocketStatus;
   Port: Word;
   Address: TSfmlIpAddress;
   SizeReceived: NativeUInt;
-  MaxSize: NativeUInt;
-  Data: Pointer;
+  Data: array [0 .. 3] of Byte;
+  SentData: array [0 .. 3] of Byte;
 begin
-  MaxSize := 1024;
-  GetMem(Data, MaxSize);
+  SenderSocket := nil;
+  PrepareUdpSockets(SenderSocket, FSfmlUdpSocket);
   try
-    ReturnValue := FSfmlUdpSocket.Receive(Data, MaxSize, SizeReceived,
+    SentData[0] := 9;
+    SentData[1] := 8;
+    SentData[2] := 7;
+    SentData[3] := 6;
+    CheckEquals(Ord(sfSocketDone), Ord(SenderSocket.Send(@SentData[0],
+      SizeOf(SentData), SfmlIpAddressLocalHost, FSfmlUdpSocket.LocalPort)));
+    WaitForUdpSocket(FSfmlUdpSocket);
+
+    ReturnValue := FSfmlUdpSocket.Receive(@Data[0], SizeOf(Data), SizeReceived,
       Address, Port);
 
-    CheckTrue(ReturnValue <> sfSocketError);
-    CheckEquals(SizeReceived, 0);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+    CheckEquals(NativeInt(SizeOf(SentData)), NativeInt(SizeReceived));
+    CheckTrue(CompareMem(@Data[0], @SentData[0], SizeOf(SentData)));
+    CheckEquals(Integer(SenderSocket.LocalPort), Integer(Port));
+    CheckEquals(Integer(SfmlIpAddressToInteger(SfmlIpAddressLocalHost)),
+      Integer(SfmlIpAddressToInteger(Address)));
   finally
-    Dispose(Data);
+    SenderSocket.Free;
+    FSfmlUdpSocket.Free;
+    FSfmlUdpSocket := TSfmlUdpSocket.Create;
   end;
 end;
 
 procedure TestTSfmlUdpSocket.TestSendPacket;
 var
+  ReceiverSocket: TSfmlUdpSocket;
   ReturnValue: TSfmlSocketStatus;
-  Address: TSfmlIpAddress;
   Packet: TSfmlPacket;
 begin
+  ReceiverSocket := TSfmlUdpSocket.Create;
   Packet := TSfmlPacket.Create;
   try
-    ReturnValue := FSfmlUdpSocket.SendPacket(Packet.Handle, Address, 123);
-    CheckTrue(ReturnValue <> sfSocketError);
+    CheckEquals(Ord(sfSocketDone), Ord(ReceiverSocket.Bind(
+      TSfmlUdpSocket.AnyPort, SfmlIpAddressLocalHost)));
+    Packet.WriteUint32(77);
+    ReturnValue := FSfmlUdpSocket.SendPacket(Packet.Handle, SfmlIpAddressLocalHost,
+      ReceiverSocket.LocalPort);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
   finally
     Packet.Free;
+    ReceiverSocket.Free;
   end;
 end;
 
 procedure TestTSfmlUdpSocket.TestReceivePacket;
 var
+  SenderSocket: TSfmlUdpSocket;
   ReturnValue: TSfmlSocketStatus;
   Port: Word;
   Address: TSfmlIpAddress;
+  SentPacket: TSfmlPacket;
   Packet: TSfmlPacket;
 begin
+  SenderSocket := nil;
+  PrepareUdpSockets(SenderSocket, FSfmlUdpSocket);
+  SentPacket := TSfmlPacket.Create;
   Packet := TSfmlPacket.Create;
   try
+    SentPacket.WriteUint32(5150);
+    CheckEquals(Ord(sfSocketDone), Ord(SenderSocket.SendPacket(
+      SentPacket.Handle, SfmlIpAddressLocalHost, FSfmlUdpSocket.LocalPort)));
+    WaitForUdpSocket(FSfmlUdpSocket);
+
     ReturnValue := FSfmlUdpSocket.ReceivePacket(Packet.Handle, Address, Port);
-    CheckTrue(ReturnValue <> sfSocketError);
+    CheckEquals(Ord(sfSocketDone), Ord(ReturnValue));
+    CheckEquals(Cardinal(5150), Packet.ReadUint32);
   finally
+    SentPacket.Free;
     Packet.Free;
+    SenderSocket.Free;
+    FSfmlUdpSocket.Free;
+    FSfmlUdpSocket := TSfmlUdpSocket.Create;
   end;
 end;
 

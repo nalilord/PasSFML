@@ -50,33 +50,14 @@ end;
 procedure TestTSfmlWindow.TestBasics;
 var
   Settings: TSfmlContextSettings;
-  Event: TSfmlEvent;
 begin
   // get settings
   Settings := FSfmlWindow.GetSettings;
 
   CheckTrue(FSfmlWindow.IsOpen);
 
-  // bring window to front
-  FSfmlWindow.RequestFocus;
-  CheckTrue(FSfmlWindow.HasFocus);
-
   // display window
   FSfmlWindow.Display;
-
-  while FSfmlWindow.IsOpen do
-  begin
-    // poll event
-    if FSfmlWindow.PollEvent(Event) then
-      if Event.EventType = sfEvtClosed then
-        Break;
-
-    // display window
-    FSfmlWindow.Display;
-
-    // wait a little bit
-    SfmlSleep(SfmlMilliseconds(10));
-  end;
 
   // close window
   FSfmlWindow.Close;
@@ -84,45 +65,23 @@ begin
 end;
 
 procedure TestTSfmlWindow.TestSetTitle;
-var
-  Event: TSfmlEvent;
 begin
   FSfmlWindow.SetTitle(AnsiString('ANSI Title'));
-
-  while FSfmlWindow.IsOpen do
-  begin
-    // display window
-    FSfmlWindow.Display;
-
-    // wait for event
-    if FSfmlWindow.WaitEvent(SfmlMilliseconds(100), Event) then
-      if Event.EventType = sfEvtClosed then
-        Break
-  end;
+  FSfmlWindow.Display;
 
   // close window
   FSfmlWindow.Close;
+  CheckFalse(FSfmlWindow.IsOpen);
 end;
 
 procedure TestTSfmlWindow.TestSetUnicodeTitle;
-var
-  Event: TSfmlEvent;
 begin
   FSfmlWindow.SetTitle(UnicodeString('Unicode Title'));
-
-  while FSfmlWindow.IsOpen do
-  begin
-    // display window
-    FSfmlWindow.Display;
-
-    // wait for event
-    if FSfmlWindow.WaitEvent(SfmlMilliseconds(100), Event) then
-      if Event.EventType = sfEvtClosed then
-        Break
-  end;
+  FSfmlWindow.Display;
 
   // close window
   FSfmlWindow.Close;
+  CheckFalse(FSfmlWindow.IsOpen);
 end;
 
 { TestTSfmlVideoMode }

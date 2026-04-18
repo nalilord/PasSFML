@@ -155,18 +155,19 @@ type
 
 {$IFDEF DynLink}
   TSfmlFtpListingResponseDestroy = procedure (FtpListingResponse: PSfmlFtpListingResponse); cdecl;
-  TSfmlFtpListingResponseIsOk = function (const FtpListingResponse: PSfmlFtpListingResponse): LongBool; cdecl;
+  TSfmlFtpListingResponseIsOk = function (const FtpListingResponse: PSfmlFtpListingResponse): TSfmlBool; cdecl;
   TSfmlFtpListingResponseGetStatus = function (const FtpListingResponse: PSfmlFtpListingResponse): TSfmlFtpStatus; cdecl;
   TSfmlFtpListingResponseGetMessage = function (const FtpListingResponse: PSfmlFtpListingResponse): PAnsiChar; cdecl;
   TSfmlFtpListingResponseGetCount = function (const FtpListingResponse: PSfmlFtpListingResponse): NativeUInt; cdecl;
   TSfmlFtpListingResponseGetName = function (const FtpListingResponse: PSfmlFtpListingResponse; Index: NativeUInt): PAnsiChar; cdecl;
   TSfmlFtpDirectoryResponseDestroy = procedure (FtpDirectoryResponse: PSfmlFtpDirectoryResponse); cdecl;
-  TSfmlFtpDirectoryResponseIsOk = function (const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): LongBool; cdecl;
+  TSfmlFtpDirectoryResponseIsOk = function (const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): TSfmlBool; cdecl;
   TSfmlFtpDirectoryResponseGetStatus = function (const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): TSfmlFtpStatus; cdecl;
   TSfmlFtpDirectoryResponseGetMessage = function (const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): PAnsiChar; cdecl;
   TSfmlFtpDirectoryResponseGetDirectory = function (const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): PAnsiChar; cdecl;
+  TSfmlFtpDirectoryResponseGetDirectoryUnicode = function (const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): PUCS4Char; cdecl;
   TSfmlFtpResponseDestroy = procedure (FtpResponse: PSfmlFtpResponse); cdecl;
-  TSfmlFtpResponseIsOk = function (const FtpResponse: PSfmlFtpResponse): LongBool; cdecl;
+  TSfmlFtpResponseIsOk = function (const FtpResponse: PSfmlFtpResponse): TSfmlBool; cdecl;
   TSfmlFtpResponseGetStatus = function (const FtpResponse: PSfmlFtpResponse): TSfmlFtpStatus; cdecl;
   TSfmlFtpResponseGetMessage = function (const FtpResponse: PSfmlFtpResponse): PAnsiChar; cdecl;
   TSfmlFtpCreate = function : PSfmlFtp; cdecl;
@@ -185,7 +186,7 @@ type
   TSfmlFtpRenameFile = function (Ftp: PSfmlFtp; const &File: PAnsiChar; const NewName: PAnsiChar): PSfmlFtpResponse; cdecl;
   TSfmlFtpDeleteFile = function (Ftp: PSfmlFtp; const Name: PAnsiChar): PSfmlFtpResponse; cdecl;
   TSfmlFtpDownload = function (Ftp: PSfmlFtp; const RemoteFile: PAnsiChar; const LocalPath: PAnsiChar; Mode: TSfmlFtpTransferMode): PSfmlFtpResponse; cdecl;
-  TSfmlFtpUpload = function (Ftp: PSfmlFtp; const LocalFile: PAnsiChar; const RemotePath: PAnsiChar; Mode: TSfmlFtpTransferMode): PSfmlFtpResponse; cdecl;
+  TSfmlFtpUpload = function (Ftp: PSfmlFtp; const LocalFile: PAnsiChar; const RemotePath: PAnsiChar; Mode: TSfmlFtpTransferMode; Append: TSfmlBool): PSfmlFtpResponse; cdecl;
   TSfmlFtpSendCommand = function (Ftp: PSfmlFtp; const Command, Parameter: PAnsiChar): PSfmlFtpResponse; cdecl;
 
 
@@ -221,31 +222,36 @@ type
   TSfmlPacketAppend = procedure (Packet: PSfmlPacket; const Data: Pointer; SizeInBytes: NativeUInt); cdecl;
   TSfmlPacketClear = procedure (Packet: PSfmlPacket); cdecl;
   TSfmlPacketGetData = function (const Packet: PSfmlPacket): Pointer; cdecl;
+  TSfmlPacketGetReadPosition = function (const Packet: PSfmlPacket): NativeUInt; cdecl;
   TSfmlPacketGetDataSize = function (const Packet: PSfmlPacket): NativeUInt; cdecl;
-  TSfmlPacketEndOfPacket = function (const Packet: PSfmlPacket): LongBool; cdecl;
-  TSfmlPacketCanRead = function (const Packet: PSfmlPacket): LongBool; cdecl;
-  TSfmlPacketReadBool = function (Packet: PSfmlPacket): LongBool; cdecl;
+  TSfmlPacketEndOfPacket = function (const Packet: PSfmlPacket): TSfmlBool; cdecl;
+  TSfmlPacketCanRead = function (const Packet: PSfmlPacket): TSfmlBool; cdecl;
+  TSfmlPacketReadBool = function (Packet: PSfmlPacket): TSfmlBool; cdecl;
   TSfmlPacketReadInt8 = function (Packet: PSfmlPacket): ShortInt; cdecl;
   TSfmlPacketReadUint8 = function (Packet: PSfmlPacket): Byte; cdecl;
   TSfmlPacketReadInt16 = function (Packet: PSfmlPacket): SmallInt; cdecl;
   TSfmlPacketReadUint16 = function (Packet: PSfmlPacket): Word; cdecl;
   TSfmlPacketReadInt32 = function (Packet: PSfmlPacket): LongInt; cdecl;
   TSfmlPacketReadUint32 = function (Packet: PSfmlPacket): Cardinal; cdecl;
+  TSfmlPacketReadInt64 = function (Packet: PSfmlPacket): Int64; cdecl;
+  TSfmlPacketReadUint64 = function (Packet: PSfmlPacket): UInt64; cdecl;
   TSfmlPacketReadFloat = function (Packet: PSfmlPacket): Single; cdecl;
   TSfmlPacketReadDouble = function (Packet: PSfmlPacket): Double; cdecl;
   TSfmlPacketReadString = procedure (Packet: PSfmlPacket; &String: PAnsiChar); cdecl;
-  TSfmlPacketReadWideString = procedure (Packet: PSfmlPacket; &String: PUCS4Char); cdecl;
-  TSfmlPacketWriteBool = procedure (Packet: PSfmlPacket; Value: LongBool); cdecl;
+  TSfmlPacketReadWideString = procedure (Packet: PSfmlPacket; &String: PWideChar); cdecl;
+  TSfmlPacketWriteBool = procedure (Packet: PSfmlPacket; Value: TSfmlBool); cdecl;
   TSfmlPacketWriteInt8 = procedure (Packet: PSfmlPacket; Value: ShortInt); cdecl;
   TSfmlPacketWriteUint8 = procedure (Packet: PSfmlPacket; Value: Byte); cdecl;
   TSfmlPacketWriteInt16 = procedure (Packet: PSfmlPacket; Value: SmallInt); cdecl;
   TSfmlPacketWriteUint16 = procedure (Packet: PSfmlPacket; Value: Word); cdecl;
   TSfmlPacketWriteInt32 = procedure (Packet: PSfmlPacket; Value: LongInt); cdecl;
   TSfmlPacketWriteUint32 = procedure (Packet: PSfmlPacket; Value: Cardinal); cdecl;
+  TSfmlPacketWriteInt64 = procedure (Packet: PSfmlPacket; Value: Int64); cdecl;
+  TSfmlPacketWriteUint64 = procedure (Packet: PSfmlPacket; Value: UInt64); cdecl;
   TSfmlPacketWriteFloat = procedure (Packet: PSfmlPacket; Value: Single); cdecl;
   TSfmlPacketWriteDouble = procedure (Packet: PSfmlPacket; Value: Double); cdecl;
   TSfmlPacketWriteString = procedure (Packet: PSfmlPacket; const &String: PAnsiChar); cdecl;
-  TSfmlPacketWriteWideString = procedure (Packet: PSfmlPacket; const &String: PUCS4Char); cdecl;
+  TSfmlPacketWriteWideString = procedure (Packet: PSfmlPacket; const &String: PWideChar); cdecl;
 
   TSfmlSocketSelectorCreate = function : PSfmlSocketSelector; cdecl;
   TSfmlSocketSelectorCopy = function (const Selector: PSfmlSocketSelector): PSfmlSocketSelector; cdecl;
@@ -257,38 +263,42 @@ type
   TSfmlSocketSelectorRemoveTcpSocket = procedure (Selector: PSfmlSocketSelector; Socket: PSfmlTcpSocket); cdecl;
   TSfmlSocketSelectorRemoveUdpSocket = procedure (Selector: PSfmlSocketSelector; Socket: PSfmlUdpSocket); cdecl;
   TSfmlSocketSelectorClear = procedure (Selector: PSfmlSocketSelector); cdecl;
-  TSfmlSocketSelectorWait = function (Selector: PSfmlSocketSelector; Timeout: TSfmlTime): LongBool; cdecl;
-  TSfmlSocketSelectorIsTcpListenerReady = function (const Selector: PSfmlSocketSelector; Socket: PSfmlTcpListener): LongBool; cdecl;
-  TSfmlSocketSelectorIsTcpSocketReady = function (const Selector: PSfmlSocketSelector; Socket: PSfmlTcpSocket): LongBool; cdecl;
-  TSfmlSocketSelectorIsUdpSocketReady = function (const Selector: PSfmlSocketSelector; Socket: PSfmlUdpSocket): LongBool; cdecl;
+  TSfmlSocketSelectorWait = function (Selector: PSfmlSocketSelector; Timeout: TSfmlTime): TSfmlBool; cdecl;
+  TSfmlSocketSelectorIsTcpListenerReady = function (const Selector: PSfmlSocketSelector; Socket: PSfmlTcpListener): TSfmlBool; cdecl;
+  TSfmlSocketSelectorIsTcpSocketReady = function (const Selector: PSfmlSocketSelector; Socket: PSfmlTcpSocket): TSfmlBool; cdecl;
+  TSfmlSocketSelectorIsUdpSocketReady = function (const Selector: PSfmlSocketSelector; Socket: PSfmlUdpSocket): TSfmlBool; cdecl;
 
   TSfmlTcpListenerCreate = function : PSfmlTcpListener; cdecl;
   TSfmlTcpListenerDestroy = procedure (Listener: PSfmlTcpListener); cdecl;
-  TSfmlTcpListenerSetBlocking = procedure (Listener: PSfmlTcpListener; Blocking: LongBool); cdecl;
-  TSfmlTcpListenerIsBlocking = function (const Listener: PSfmlTcpListener): LongBool; cdecl;
+  TSfmlTcpListenerSetBlocking = procedure (Listener: PSfmlTcpListener; Blocking: TSfmlBool); cdecl;
+  TSfmlTcpListenerIsBlocking = function (const Listener: PSfmlTcpListener): TSfmlBool; cdecl;
   TSfmlTcpListenerGetLocalPort = function (const Listener: PSfmlTcpListener): Word; cdecl;
+  TSfmlTcpListenerAnyPort = function : Word; cdecl;
   TSfmlTcpListenerListen = function (Listener: PSfmlTcpListener; Port: Word; Address: TSfmlIpAddress): TSfmlSocketStatus; cdecl;
   TSfmlTcpListenerAccept = function (Listener: PSfmlTcpListener; out Connected: PSfmlTcpSocket): TSfmlSocketStatus; cdecl;
+  TSfmlTcpListenerClose = procedure (Listener: PSfmlTcpListener); cdecl;
 
   TSfmlTcpSocketCreate = function : PSfmlTcpSocket; cdecl;
   TSfmlTcpSocketDestroy = procedure (Socket: PSfmlTcpSocket); cdecl;
-  TSfmlTcpSocketSetBlocking = procedure (Socket: PSfmlTcpSocket; Blocking: LongBool); cdecl;
-  TSfmlTcpSocketIsBlocking = function (const Socket: PSfmlTcpSocket): LongBool; cdecl;
+  TSfmlTcpSocketSetBlocking = procedure (Socket: PSfmlTcpSocket; Blocking: TSfmlBool); cdecl;
+  TSfmlTcpSocketIsBlocking = function (const Socket: PSfmlTcpSocket): TSfmlBool; cdecl;
   TSfmlTcpSocketGetLocalPort = function (const Socket: PSfmlTcpSocket): Word; cdecl;
   TSfmlTcpSocketGetRemoteAddress = function (const Socket: PSfmlTcpSocket): TSfmlIpAddress; cdecl;
   TSfmlTcpSocketGetRemotePort = function (const Socket: PSfmlTcpSocket): Word; cdecl;
   TSfmlTcpSocketConnect = function (Socket: PSfmlTcpSocket; RemoteAddress: TSfmlIpAddress; RemotePort: Word; TimeOut: TSfmlTime): TSfmlSocketStatus; cdecl;
   TSfmlTcpSocketDisconnect = procedure (Socket: PSfmlTcpSocket); cdecl;
   TSfmlTcpSocketSend = function (Socket: PSfmlTcpSocket; const Data: Pointer; Size: NativeUInt): TSfmlSocketStatus; cdecl;
+  TSfmlTcpSocketSendPartial = function (Socket: PSfmlTcpSocket; const Data: Pointer; Size: NativeUInt; out Sent: NativeUInt): TSfmlSocketStatus; cdecl;
   TSfmlTcpSocketReceive = function (Socket: PSfmlTcpSocket; Data: Pointer; Size: NativeUInt; out Received: NativeUInt): TSfmlSocketStatus; cdecl;
   TSfmlTcpSocketSendPacket = function (Socket: PSfmlTcpSocket; Packet: PSfmlPacket): TSfmlSocketStatus; cdecl;
   TSfmlTcpSocketReceivePacket = function (Socket: PSfmlTcpSocket; Packet: PSfmlPacket): TSfmlSocketStatus; cdecl;
 
   TSfmlUdpSocketCreate = function : PSfmlUdpSocket; cdecl;
   TSfmlUdpSocketDestroy = procedure (Socket: PSfmlUdpSocket); cdecl;
-  TSfmlUdpSocketSetBlocking = procedure (Socket: PSfmlUdpSocket; Blocking: LongBool); cdecl;
-  TSfmlUdpSocketIsBlocking = function (const Socket: PSfmlUdpSocket): LongBool; cdecl;
+  TSfmlUdpSocketSetBlocking = procedure (Socket: PSfmlUdpSocket; Blocking: TSfmlBool); cdecl;
+  TSfmlUdpSocketIsBlocking = function (const Socket: PSfmlUdpSocket): TSfmlBool; cdecl;
   TSfmlUdpSocketGetLocalPort = function (const Socket: PSfmlUdpSocket): Word; cdecl;
+  TSfmlUdpSocketAnyPort = function : Word; cdecl;
   TSfmlUdpSocketBind = function (Socket: PSfmlUdpSocket; Port: Word; Address: TSfmlIpAddress): TSfmlSocketStatus; cdecl;
   TSfmlUdpSocketUnbind = procedure (Socket: PSfmlUdpSocket); cdecl;
   TSfmlUdpSocketSend = function (Socket: PSfmlUdpSocket; const Data: Pointer; Size: NativeUInt; RemoteAddress: TSfmlIpAddress; RemotePort: Word): TSfmlSocketStatus; cdecl;
@@ -314,6 +324,7 @@ var
   SfmlFtpDirectoryResponseGetStatus: TSfmlFtpDirectoryResponseGetStatus;
   SfmlFtpDirectoryResponseGetMessage: TSfmlFtpDirectoryResponseGetMessage;
   SfmlFtpDirectoryResponseGetDirectory: TSfmlFtpDirectoryResponseGetDirectory;
+  SfmlFtpDirectoryResponseGetDirectoryUnicode: TSfmlFtpDirectoryResponseGetDirectoryUnicode;
   SfmlFtpResponseDestroy: TSfmlFtpResponseDestroy;
   SfmlFtpResponseIsOk: TSfmlFtpResponseIsOk;
   SfmlFtpResponseGetStatus: TSfmlFtpResponseGetStatus;
@@ -369,6 +380,7 @@ var
   SfmlPacketAppend: TSfmlPacketAppend;
   SfmlPacketClear: TSfmlPacketClear;
   SfmlPacketGetData: TSfmlPacketGetData;
+  SfmlPacketGetReadPosition: TSfmlPacketGetReadPosition;
   SfmlPacketGetDataSize: TSfmlPacketGetDataSize;
   SfmlPacketEndOfPacket: TSfmlPacketEndOfPacket;
   SfmlPacketCanRead: TSfmlPacketCanRead;
@@ -379,6 +391,8 @@ var
   SfmlPacketReadUint16: TSfmlPacketReadUint16;
   SfmlPacketReadInt32: TSfmlPacketReadInt32;
   SfmlPacketReadUint32: TSfmlPacketReadUint32;
+  SfmlPacketReadInt64: TSfmlPacketReadInt64;
+  SfmlPacketReadUint64: TSfmlPacketReadUint64;
   SfmlPacketReadFloat: TSfmlPacketReadFloat;
   SfmlPacketReadDouble: TSfmlPacketReadDouble;
   SfmlPacketReadString: TSfmlPacketReadString;
@@ -390,6 +404,8 @@ var
   SfmlPacketWriteUint16: TSfmlPacketWriteUint16;
   SfmlPacketWriteInt32: TSfmlPacketWriteInt32;
   SfmlPacketWriteUint32: TSfmlPacketWriteUint32;
+  SfmlPacketWriteInt64: TSfmlPacketWriteInt64;
+  SfmlPacketWriteUint64: TSfmlPacketWriteUint64;
   SfmlPacketWriteFloat: TSfmlPacketWriteFloat;
   SfmlPacketWriteDouble: TSfmlPacketWriteDouble;
   SfmlPacketWriteString: TSfmlPacketWriteString;
@@ -415,8 +431,10 @@ var
   SfmlTcpListenerSetBlocking: TSfmlTcpListenerSetBlocking;
   SfmlTcpListenerIsBlocking: TSfmlTcpListenerIsBlocking;
   SfmlTcpListenerGetLocalPort: TSfmlTcpListenerGetLocalPort;
+  SfmlTcpListenerAnyPort: TSfmlTcpListenerAnyPort;
   SfmlTcpListenerListen: TSfmlTcpListenerListen;
   SfmlTcpListenerAccept: TSfmlTcpListenerAccept;
+  SfmlTcpListenerClose: TSfmlTcpListenerClose;
 
   SfmlTcpSocketCreate: TSfmlTcpSocketCreate;
   SfmlTcpSocketDestroy: TSfmlTcpSocketDestroy;
@@ -428,6 +446,7 @@ var
   SfmlTcpSocketConnect: TSfmlTcpSocketConnect;
   SfmlTcpSocketDisconnect: TSfmlTcpSocketDisconnect;
   SfmlTcpSocketSend: TSfmlTcpSocketSend;
+  SfmlTcpSocketSendPartial: TSfmlTcpSocketSendPartial;
   SfmlTcpSocketReceive: TSfmlTcpSocketReceive;
   SfmlTcpSocketSendPacket: TSfmlTcpSocketSendPacket;
   SfmlTcpSocketReceivePacket: TSfmlTcpSocketReceivePacket;
@@ -437,6 +456,7 @@ var
   SfmlUdpSocketSetBlocking: TSfmlUdpSocketSetBlocking;
   SfmlUdpSocketIsBlocking: TSfmlUdpSocketIsBlocking;
   SfmlUdpSocketGetLocalPort: TSfmlUdpSocketGetLocalPort;
+  SfmlUdpSocketAnyPort: TSfmlUdpSocketAnyPort;
   SfmlUdpSocketBind: TSfmlUdpSocketBind;
   SfmlUdpSocketUnbind: TSfmlUdpSocketUnbind;
   SfmlUdpSocketSend: TSfmlUdpSocketSend;
@@ -453,18 +473,19 @@ const
 
   // static linking
   procedure SfmlFtpListingResponseDestroy(FtpListingResponse: PSfmlFtpListingResponse); cdecl; external CSfmlNetworkLibrary name 'sfFtpListingResponse_destroy';
-  function SfmlFtpListingResponseIsOk(const FtpListingResponse: PSfmlFtpListingResponse): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfFtpListingResponse_isOk';
+  function SfmlFtpListingResponseIsOk(const FtpListingResponse: PSfmlFtpListingResponse): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfFtpListingResponse_isOk';
   function SfmlFtpListingResponseGetStatus(const FtpListingResponse: PSfmlFtpListingResponse): TSfmlFtpStatus; cdecl; external CSfmlNetworkLibrary name 'sfFtpListingResponse_getStatus';
   function SfmlFtpListingResponseGetMessage(const FtpListingResponse: PSfmlFtpListingResponse): PAnsiChar; cdecl; external CSfmlNetworkLibrary name 'sfFtpListingResponse_getMessage';
   function SfmlFtpListingResponseGetCount(const FtpListingResponse: PSfmlFtpListingResponse): NativeUInt; cdecl; external CSfmlNetworkLibrary name 'sfFtpListingResponse_getCount';
   function SfmlFtpListingResponseGetName(const FtpListingResponse: PSfmlFtpListingResponse; Index: NativeUInt): PAnsiChar; cdecl; external CSfmlNetworkLibrary name 'sfFtpListingResponse_getName';
   procedure SfmlFtpDirectoryResponseDestroy(FtpDirectoryResponse: PSfmlFtpDirectoryResponse); cdecl; external CSfmlNetworkLibrary name 'sfFtpDirectoryResponse_destroy';
-  function SfmlFtpDirectoryResponseIsOk(const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfFtpDirectoryResponse_isOk';
+  function SfmlFtpDirectoryResponseIsOk(const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfFtpDirectoryResponse_isOk';
   function SfmlFtpDirectoryResponseGetStatus(const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): TSfmlFtpStatus; cdecl; external CSfmlNetworkLibrary name 'sfFtpDirectoryResponse_getStatus';
   function SfmlFtpDirectoryResponseGetMessage(const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): PAnsiChar; cdecl; external CSfmlNetworkLibrary name 'sfFtpDirectoryResponse_getMessage';
   function SfmlFtpDirectoryResponseGetDirectory(const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): PAnsiChar; cdecl; external CSfmlNetworkLibrary name 'sfFtpDirectoryResponse_getDirectory';
+  function SfmlFtpDirectoryResponseGetDirectoryUnicode(const FtpDirectoryResponse: PSfmlFtpDirectoryResponse): PUCS4Char; cdecl; external CSfmlNetworkLibrary name 'sfFtpDirectoryResponse_getDirectoryUnicode';
   procedure SfmlFtpResponseDestroy(FtpResponse: PSfmlFtpResponse); cdecl; external CSfmlNetworkLibrary name 'sfFtpResponse_destroy';
-  function SfmlFtpResponseIsOk(const FtpResponse: PSfmlFtpResponse): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfFtpResponse_isOk';
+  function SfmlFtpResponseIsOk(const FtpResponse: PSfmlFtpResponse): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfFtpResponse_isOk';
   function SfmlFtpResponseGetStatus(const FtpResponse: PSfmlFtpResponse): TSfmlFtpStatus; cdecl; external CSfmlNetworkLibrary name 'sfFtpResponse_getStatus';
   function SfmlFtpResponseGetMessage(const FtpResponse: PSfmlFtpResponse): PAnsiChar; cdecl; external CSfmlNetworkLibrary name 'sfFtpResponse_getMessage';
   function SfmlFtpCreate: PSfmlFtp; cdecl; external CSfmlNetworkLibrary name 'sfFtp_create';
@@ -483,7 +504,7 @@ const
   function SfmlFtpRenameFile(Ftp: PSfmlFtp; const &File: PAnsiChar; const NewName: PAnsiChar): PSfmlFtpResponse; cdecl; external CSfmlNetworkLibrary name 'sfFtp_renameFile';
   function SfmlFtpDeleteFile(Ftp: PSfmlFtp; const Name: PAnsiChar): PSfmlFtpResponse; cdecl; external CSfmlNetworkLibrary name 'sfFtp_deleteFile';
   function SfmlFtpDownload(Ftp: PSfmlFtp; const RemoteFile: PAnsiChar; const LocalPath: PAnsiChar; Mode: TSfmlFtpTransferMode): PSfmlFtpResponse; cdecl; external CSfmlNetworkLibrary name 'sfFtp_download';
-  function SfmlFtpUpload(Ftp: PSfmlFtp; const LocalFile: PAnsiChar; const RemotePath: PAnsiChar; Mode: TSfmlFtpTransferMode): PSfmlFtpResponse; cdecl; external CSfmlNetworkLibrary name 'sfFtp_upload';
+  function SfmlFtpUpload(Ftp: PSfmlFtp; const LocalFile: PAnsiChar; const RemotePath: PAnsiChar; Mode: TSfmlFtpTransferMode; Append: TSfmlBool): PSfmlFtpResponse; cdecl; external CSfmlNetworkLibrary name 'sfFtp_upload';
   function SfmlFtpSendCommand(Ftp: PSfmlFtp; const Command, Parameter: PAnsiChar): PSfmlFtpResponse; cdecl; external CSfmlNetworkLibrary name 'sfFtp_sendCommand';
 
   function SfmlHttpRequestCreate: PSfmlHttpRequest; cdecl; external CSfmlNetworkLibrary name 'sfHttpRequest_create';
@@ -518,31 +539,36 @@ const
   procedure SfmlPacketAppend(Packet: PSfmlPacket; const Data: Pointer; SizeInBytes: NativeUInt); cdecl; external CSfmlNetworkLibrary name 'sfPacket_append';
   procedure SfmlPacketClear(Packet: PSfmlPacket); cdecl; external CSfmlNetworkLibrary name 'sfPacket_clear';
   function SfmlPacketGetData(const Packet: PSfmlPacket): Pointer; cdecl; external CSfmlNetworkLibrary name 'sfPacket_getData';
+  function SfmlPacketGetReadPosition(const Packet: PSfmlPacket): NativeUInt; cdecl; external CSfmlNetworkLibrary name 'sfPacket_getReadPosition';
   function SfmlPacketGetDataSize(const Packet: PSfmlPacket): NativeUInt; cdecl; external CSfmlNetworkLibrary name 'sfPacket_getDataSize';
-  function SfmlPacketEndOfPacket(const Packet: PSfmlPacket): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfPacket_endOfPacket';
-  function SfmlPacketCanRead(const Packet: PSfmlPacket): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfPacket_canRead';
-  function SfmlPacketReadBool(Packet: PSfmlPacket): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readBool';
+  function SfmlPacketEndOfPacket(const Packet: PSfmlPacket): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfPacket_endOfPacket';
+  function SfmlPacketCanRead(const Packet: PSfmlPacket): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfPacket_canRead';
+  function SfmlPacketReadBool(Packet: PSfmlPacket): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readBool';
   function SfmlPacketReadInt8(Packet: PSfmlPacket): ShortInt; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readInt8';
   function SfmlPacketReadUint8(Packet: PSfmlPacket): Byte; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readUint8';
   function SfmlPacketReadInt16(Packet: PSfmlPacket): SmallInt; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readInt16';
   function SfmlPacketReadUint16(Packet: PSfmlPacket): Word; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readUint16';
   function SfmlPacketReadInt32(Packet: PSfmlPacket): LongInt; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readInt32';
   function SfmlPacketReadUint32(Packet: PSfmlPacket): Cardinal; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readUint32';
+  function SfmlPacketReadInt64(Packet: PSfmlPacket): Int64; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readInt64';
+  function SfmlPacketReadUint64(Packet: PSfmlPacket): UInt64; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readUint64';
   function SfmlPacketReadFloat(Packet: PSfmlPacket): Single; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readFloat';
   function SfmlPacketReadDouble(Packet: PSfmlPacket): Double; cdecl; external CSfmlNetworkLibrary name 'sfPacket_readDouble';
   procedure SfmlPacketReadString(Packet: PSfmlPacket; &String: PAnsiChar); cdecl; external CSfmlNetworkLibrary name 'sfPacket_readString';
-  procedure SfmlPacketReadWideString(Packet: PSfmlPacket; &String: PUCS4Char); cdecl; external CSfmlNetworkLibrary name 'sfPacket_readWideString';
-  procedure SfmlPacketWriteBool(Packet: PSfmlPacket; Value: LongBool); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeBool';
+  procedure SfmlPacketReadWideString(Packet: PSfmlPacket; &String: PWideChar); cdecl; external CSfmlNetworkLibrary name 'sfPacket_readWideString';
+  procedure SfmlPacketWriteBool(Packet: PSfmlPacket; Value: TSfmlBool); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeBool';
   procedure SfmlPacketWriteInt8(Packet: PSfmlPacket; Value: ShortInt); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeInt8';
   procedure SfmlPacketWriteUint8(Packet: PSfmlPacket; Value: Byte); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeUint8';
   procedure SfmlPacketWriteInt16(Packet: PSfmlPacket; Value: SmallInt); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeInt16';
   procedure SfmlPacketWriteUint16(Packet: PSfmlPacket; Value: Word); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeUint16';
   procedure SfmlPacketWriteInt32(Packet: PSfmlPacket; Value: LongInt); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeInt32';
   procedure SfmlPacketWriteUint32(Packet: PSfmlPacket; Value: Cardinal); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeUint32';
+  procedure SfmlPacketWriteInt64(Packet: PSfmlPacket; Value: Int64); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeInt64';
+  procedure SfmlPacketWriteUint64(Packet: PSfmlPacket; Value: UInt64); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeUint64';
   procedure SfmlPacketWriteFloat(Packet: PSfmlPacket; Value: Single); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeFloat';
   procedure SfmlPacketWriteDouble(Packet: PSfmlPacket; Value: Double); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeDouble';
   procedure SfmlPacketWriteString(Packet: PSfmlPacket; const &String: PAnsiChar); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeString';
-  procedure SfmlPacketWriteWideString(Packet: PSfmlPacket; const &String: PUCS4Char); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeWideString';
+  procedure SfmlPacketWriteWideString(Packet: PSfmlPacket; const &String: PWideChar); cdecl; external CSfmlNetworkLibrary name 'sfPacket_writeWideString';
 
   function SfmlSocketSelectorCreate: PSfmlSocketSelector; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_create';
   function SfmlSocketSelectorCopy(const Selector: PSfmlSocketSelector): PSfmlSocketSelector; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_copy';
@@ -554,38 +580,42 @@ const
   procedure SfmlSocketSelectorRemoveTcpSocket(Selector: PSfmlSocketSelector; Socket: PSfmlTcpSocket); cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_removeTcpSocket';
   procedure SfmlSocketSelectorRemoveUdpSocket(Selector: PSfmlSocketSelector; Socket: PSfmlUdpSocket); cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_removeUdpSocket';
   procedure SfmlSocketSelectorClear(Selector: PSfmlSocketSelector); cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_clear';
-  function SfmlSocketSelectorWait(Selector: PSfmlSocketSelector; Timeout: TSfmlTime): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_wait';
-  function SfmlSocketSelectorIsTcpListenerReady(const Selector: PSfmlSocketSelector; Socket: PSfmlTcpListener): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_isTcpListenerReady';
-  function SfmlSocketSelectorIsTcpSocketReady(const Selector: PSfmlSocketSelector; Socket: PSfmlTcpSocket): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_isTcpSocketReady';
-  function SfmlSocketSelectorIsUdpSocketReady(const Selector: PSfmlSocketSelector; Socket: PSfmlUdpSocket): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_isUdpSocketReady';
+  function SfmlSocketSelectorWait(Selector: PSfmlSocketSelector; Timeout: TSfmlTime): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_wait';
+  function SfmlSocketSelectorIsTcpListenerReady(const Selector: PSfmlSocketSelector; Socket: PSfmlTcpListener): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_isTcpListenerReady';
+  function SfmlSocketSelectorIsTcpSocketReady(const Selector: PSfmlSocketSelector; Socket: PSfmlTcpSocket): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_isTcpSocketReady';
+  function SfmlSocketSelectorIsUdpSocketReady(const Selector: PSfmlSocketSelector; Socket: PSfmlUdpSocket): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfSocketSelector_isUdpSocketReady';
 
   function SfmlTcpListenerCreate: PSfmlTcpListener; cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_create';
   procedure SfmlTcpListenerDestroy(Listener: PSfmlTcpListener); cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_destroy';
-  procedure SfmlTcpListenerSetBlocking(Listener: PSfmlTcpListener; Blocking: LongBool); cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_setBlocking';
-  function SfmlTcpListenerIsBlocking(const Listener: PSfmlTcpListener): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_isBlocking';
+  procedure SfmlTcpListenerSetBlocking(Listener: PSfmlTcpListener; Blocking: TSfmlBool); cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_setBlocking';
+  function SfmlTcpListenerIsBlocking(const Listener: PSfmlTcpListener): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_isBlocking';
   function SfmlTcpListenerGetLocalPort(const Listener: PSfmlTcpListener): Word; cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_getLocalPort';
+  function SfmlTcpListenerAnyPort: Word; cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_anyPort';
   function SfmlTcpListenerListen(Listener: PSfmlTcpListener; Port: Word; Address: TSfmlIpAddress): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_listen';
   function SfmlTcpListenerAccept(Listener: PSfmlTcpListener; out Connected: PSfmlTcpSocket): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_accept';
+  procedure SfmlTcpListenerClose(Listener: PSfmlTcpListener); cdecl; external CSfmlNetworkLibrary name 'sfTcpListener_close';
 
   function SfmlTcpSocketCreate: PSfmlTcpSocket; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_create';
   procedure SfmlTcpSocketDestroy(Socket: PSfmlTcpSocket); cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_destroy';
-  procedure SfmlTcpSocketSetBlocking(Socket: PSfmlTcpSocket; Blocking: LongBool); cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_setBlocking';
-  function SfmlTcpSocketIsBlocking(const Socket: PSfmlTcpSocket): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_isBlocking';
+  procedure SfmlTcpSocketSetBlocking(Socket: PSfmlTcpSocket; Blocking: TSfmlBool); cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_setBlocking';
+  function SfmlTcpSocketIsBlocking(const Socket: PSfmlTcpSocket): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_isBlocking';
   function SfmlTcpSocketGetLocalPort(const Socket: PSfmlTcpSocket): Word; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_getLocalPort';
   function SfmlTcpSocketGetRemoteAddress(const Socket: PSfmlTcpSocket): TSfmlIpAddress; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_getRemoteAddress';
   function SfmlTcpSocketGetRemotePort(const Socket: PSfmlTcpSocket): Word; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_getRemotePort';
   function SfmlTcpSocketConnect(Socket: PSfmlTcpSocket; RemoteAddress: TSfmlIpAddress; RemotePort: Word; TimeOut: TSfmlTime): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_connect';
   procedure SfmlTcpSocketDisconnect(Socket: PSfmlTcpSocket); cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_disconnect';
   function SfmlTcpSocketSend(Socket: PSfmlTcpSocket; const Data: Pointer; Size: NativeUInt): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_send';
+  function SfmlTcpSocketSendPartial(Socket: PSfmlTcpSocket; const Data: Pointer; Size: NativeUInt; out Sent: NativeUInt): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_sendPartial';
   function SfmlTcpSocketReceive(Socket: PSfmlTcpSocket; Data: Pointer; Size: NativeUInt; out Received: NativeUInt): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_receive';
   function SfmlTcpSocketSendPacket(Socket: PSfmlTcpSocket; Packet: PSfmlPacket): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_sendPacket';
   function SfmlTcpSocketReceivePacket(Socket: PSfmlTcpSocket; Packet: PSfmlPacket): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfTcpSocket_receivePacket';
 
   function SfmlUdpSocketCreate: PSfmlUdpSocket; cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_create';
   procedure SfmlUdpSocketDestroy(Socket: PSfmlUdpSocket); cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_destroy';
-  procedure SfmlUdpSocketSetBlocking(Socket: PSfmlUdpSocket; Blocking: LongBool); cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_setBlocking';
-  function SfmlUdpSocketIsBlocking(const Socket: PSfmlUdpSocket): LongBool; cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_isBlocking';
+  procedure SfmlUdpSocketSetBlocking(Socket: PSfmlUdpSocket; Blocking: TSfmlBool); cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_setBlocking';
+  function SfmlUdpSocketIsBlocking(const Socket: PSfmlUdpSocket): TSfmlBool; cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_isBlocking';
   function SfmlUdpSocketGetLocalPort(const Socket: PSfmlUdpSocket): Word; cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_getLocalPort';
+  function SfmlUdpSocketAnyPort: Word; cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_anyPort';
   function SfmlUdpSocketBind(Socket: PSfmlUdpSocket; Port: Word; Address: TSfmlIpAddress): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_bind';
   procedure SfmlUdpSocketUnbind(Socket: PSfmlUdpSocket); cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_unbind';
   function SfmlUdpSocketSend(Socket: PSfmlUdpSocket; const Data: Pointer; Size: NativeUInt; RemoteAddress: TSfmlIpAddress; RemotePort: Word): TSfmlSocketStatus; cdecl; external CSfmlNetworkLibrary name 'sfUdpSocket_send';
@@ -639,6 +669,7 @@ type
 
     function IsOk: Boolean; override;
     function GetDirectory: AnsiString;
+    function GetUnicodeDirectory: UnicodeString;
   end;
 
   TSfmlFtp = class
@@ -663,7 +694,7 @@ type
     function RenameFile(const &File, NewName: AnsiString): TSfmlFtpResponse;
     function DeleteFile(const Name: AnsiString): TSfmlFtpResponse;
     function Download(const RemoteFile, LocalPath: AnsiString; Mode: TSfmlFtpTransferMode = sfFtpBinary): TSfmlFtpResponse;
-    function Upload(const LocalFile, RemotePath: AnsiString; Mode: TSfmlFtpTransferMode = sfFtpBinary): TSfmlFtpResponse;
+    function Upload(const LocalFile, RemotePath: AnsiString; Mode: TSfmlFtpTransferMode = sfFtpBinary; Append: Boolean = False): TSfmlFtpResponse;
     function SendCommand(const Command, Parameter: AnsiString): TSfmlFtpResponse;
   end;
 
@@ -714,6 +745,7 @@ type
     FHandle: PSfmlPacket;
     constructor Create(Handle: PSfmlPacket); overload;
     function GetDataSize: NativeUInt;
+    function GetReadPosition: NativeUInt;
   public
     constructor Create; overload;
     destructor Destroy; override;
@@ -732,6 +764,8 @@ type
     function ReadUint16: Word;
     function ReadInt32: LongInt;
     function ReadUint32: Cardinal;
+    function ReadInt64: Int64;
+    function ReadUint64: UInt64;
     function ReadFloat: Single;
     function ReadDouble: Double;
     procedure ReadString(out &String: AnsiString);
@@ -743,12 +777,15 @@ type
     procedure WriteUint16(Value: Word);
     procedure WriteInt32(Value: LongInt);
     procedure WriteUint32(Value: Cardinal);
+    procedure WriteInt64(Value: Int64);
+    procedure WriteUint64(Value: UInt64);
     procedure WriteFloat(Value: Single);
     procedure WriteDouble(Value: Double);
     procedure WriteString(&String: AnsiString);
     procedure WriteWideString(&String: UnicodeString);
 
     property DataSize: NativeUInt read GetDataSize;
+    property ReadPosition: NativeUInt read GetReadPosition;
     property Handle: PSfmlPacket read FHandle;
   end;
 
@@ -762,7 +799,11 @@ type
 
     function Copy: TSfmlSocketSelector;
     procedure AddTcpListener(Socket: PSfmlTcpListener);
+    procedure AddTcpSocket(Socket: PSfmlTcpSocket);
+    procedure AddUdpSocket(Socket: PSfmlUdpSocket);
     procedure RemoveTcpListener(Socket: PSfmlTcpListener);
+    procedure RemoveTcpSocket(Socket: PSfmlTcpSocket);
+    procedure RemoveUdpSocket(Socket: PSfmlUdpSocket);
     procedure Clear;
     function Wait(Timeout: TSfmlTime): Boolean;
     function IsTcpListenerReady(Socket: PSfmlTcpListener): Boolean;
@@ -795,6 +836,8 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
+    class function AnyPort: Word; static;
+    procedure Close;
     function Listen(Port: Word; Address: TSfmlIpAddress): TSfmlSocketStatus;
     function Accept(out Connected: PSfmlTcpSocket): TSfmlSocketStatus; overload;
     function Accept(out Connected: TSfmlTcpSocket): TSfmlSocketStatus; overload;
@@ -819,6 +862,7 @@ type
     function Connect(Host: TSfmlIpAddress; Port: Word; TimeOut: TSfmlTime): TSfmlSocketStatus;
     procedure Disconnect;
     function Send(Data: Pointer; Size: NativeUInt): TSfmlSocketStatus;
+    function SendPartial(Data: Pointer; Size: NativeUInt; out Sent: NativeUInt): TSfmlSocketStatus;
     function Receive(Data: Pointer; MaxSize: NativeUInt; out SizeReceived: NativeUInt): TSfmlSocketStatus;
     function SendPacket(Packet: PSfmlPacket): TSfmlSocketStatus;
     function ReceivePacket(Packet: PSfmlPacket): TSfmlSocketStatus;
@@ -837,6 +881,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
+    class function AnyPort: Word; static;
     function Bind(Port: Word; Address: TSfmlIpAddress): TSfmlSocketStatus;
     procedure Unbind;
     function Send(Data: Pointer; Size: NativeUInt; RemoteAddress: TSfmlIpAddress; RemotePort: Word): TSfmlSocketStatus;
@@ -915,6 +960,12 @@ end;
 function TSfmlFtpDirectoryResponse.GetDirectory: AnsiString;
 begin
   Result := SfmlFtpDirectoryResponseGetDirectory(FHandle);
+end;
+
+function TSfmlFtpDirectoryResponse.GetUnicodeDirectory: UnicodeString;
+begin
+  Result := UCS4StringToUnicodeString(UCS4String(
+    SfmlFtpDirectoryResponseGetDirectoryUnicode(FHandle)));
 end;
 
 function TSfmlFtpDirectoryResponse.GetMessage: AnsiString;
@@ -1071,10 +1122,10 @@ begin
 end;
 
 function TSfmlFtp.Upload(const LocalFile, RemotePath: AnsiString;
-  Mode: TSfmlFtpTransferMode = sfFtpBinary): TSfmlFtpResponse;
+  Mode: TSfmlFtpTransferMode; Append: Boolean): TSfmlFtpResponse;
 begin
   Result := TSfmlFtpResponse.Create(SfmlFtpUpload(FHandle, PAnsiChar(LocalFile),
-    PAnsiChar(RemotePath), Mode));
+    PAnsiChar(RemotePath), Mode, Append));
 end;
 
 
@@ -1242,6 +1293,11 @@ begin
   Result := SfmlPacketGetDataSize(FHandle);
 end;
 
+function TSfmlPacket.GetReadPosition: NativeUInt;
+begin
+  Result := SfmlPacketGetReadPosition(FHandle);
+end;
+
 function TSfmlPacket.ReadBool: Boolean;
 begin
   Result := SfmlPacketReadBool(FHandle);
@@ -1255,6 +1311,11 @@ end;
 function TSfmlPacket.ReadFloat: Single;
 begin
   Result := SfmlPacketReadFloat(FHandle);
+end;
+
+function TSfmlPacket.ReadInt64: Int64;
+begin
+  Result := SfmlPacketReadInt64(FHandle);
 end;
 
 function TSfmlPacket.ReadInt16: SmallInt;
@@ -1273,8 +1334,12 @@ begin
 end;
 
 procedure TSfmlPacket.ReadString(out &String: AnsiString);
+var
+  Temp: AnsiString;
 begin
-  SfmlPacketReadString(FHandle, PAnsiChar(&String));
+  SetLength(Temp, SfmlPacketGetDataSize(FHandle) + 1);
+  SfmlPacketReadString(FHandle, PAnsiChar(Temp));
+  &String := PAnsiChar(Temp);
 end;
 
 function TSfmlPacket.ReadUint16: Word;
@@ -1287,6 +1352,11 @@ begin
   Result := SfmlPacketReadUint32(FHandle);
 end;
 
+function TSfmlPacket.ReadUint64: UInt64;
+begin
+  Result := SfmlPacketReadUint64(FHandle);
+end;
+
 function TSfmlPacket.ReadUint8: Byte;
 begin
   Result := SfmlPacketReadUint8(FHandle);
@@ -1294,10 +1364,11 @@ end;
 
 procedure TSfmlPacket.ReadWideString(out &String: UnicodeString);
 var
-  Temp: UCS4String;
+  Temp: UnicodeString;
 begin
-  SfmlPacketReadWideString(FHandle, PUCS4Char(Temp));
-  &String := UCS4StringToUnicodeString(Temp);
+  SetLength(Temp, (SfmlPacketGetDataSize(FHandle) div SizeOf(WideChar)) + 1);
+  SfmlPacketReadWideString(FHandle, PWideChar(Temp));
+  &String := PWideChar(Temp);
 end;
 
 procedure TSfmlPacket.WriteBool(Value: Boolean);
@@ -1325,6 +1396,11 @@ begin
   SfmlPacketWriteInt32(FHandle, Value);
 end;
 
+procedure TSfmlPacket.WriteInt64(Value: Int64);
+begin
+  SfmlPacketWriteInt64(FHandle, Value);
+end;
+
 procedure TSfmlPacket.WriteInt8(Value: ShortInt);
 begin
   SfmlPacketWriteInt8(FHandle, Value);
@@ -1345,6 +1421,11 @@ begin
   SfmlPacketWriteUint32(FHandle, Value);
 end;
 
+procedure TSfmlPacket.WriteUint64(Value: UInt64);
+begin
+  SfmlPacketWriteUint64(FHandle, Value);
+end;
+
 procedure TSfmlPacket.WriteUint8(Value: Byte);
 begin
   SfmlPacketWriteUint8(FHandle, Value);
@@ -1352,8 +1433,7 @@ end;
 
 procedure TSfmlPacket.WriteWideString(&String: UnicodeString);
 begin
-  SfmlPacketWriteWideString(FHandle,
-    PUCS4Char(UnicodeStringToUCS4String(&String)));
+  SfmlPacketWriteWideString(FHandle, PWideChar(&String));
 end;
 
 
@@ -1378,6 +1458,16 @@ end;
 procedure TSfmlSocketSelector.AddTcpListener(Socket: PSfmlTcpListener);
 begin
   SfmlSocketSelectorAddTcpListener(FHandle, Socket);
+end;
+
+procedure TSfmlSocketSelector.AddTcpSocket(Socket: PSfmlTcpSocket);
+begin
+  SfmlSocketSelectorAddTcpSocket(FHandle, Socket);
+end;
+
+procedure TSfmlSocketSelector.AddUdpSocket(Socket: PSfmlUdpSocket);
+begin
+  SfmlSocketSelectorAddUdpSocket(FHandle, Socket);
 end;
 
 procedure TSfmlSocketSelector.Clear;
@@ -1411,6 +1501,16 @@ begin
   SfmlSocketSelectorRemoveTcpListener(FHandle, Socket);
 end;
 
+procedure TSfmlSocketSelector.RemoveTcpSocket(Socket: PSfmlTcpSocket);
+begin
+  SfmlSocketSelectorRemoveTcpSocket(FHandle, Socket);
+end;
+
+procedure TSfmlSocketSelector.RemoveUdpSocket(Socket: PSfmlUdpSocket);
+begin
+  SfmlSocketSelectorRemoveUdpSocket(FHandle, Socket);
+end;
+
 function TSfmlSocketSelector.Wait(Timeout: TSfmlTime): Boolean;
 begin
   Result := SfmlSocketSelectorWait(FHandle, Timeout);
@@ -1424,10 +1524,20 @@ begin
   FHandle := SfmlTcpListenerCreate;
 end;
 
+class function TSfmlTcpListener.AnyPort: Word;
+begin
+  Result := SfmlTcpListenerAnyPort;
+end;
+
 destructor TSfmlTcpListener.Destroy;
 begin
   SfmlTcpListenerDestroy(FHandle);
   inherited;
+end;
+
+procedure TSfmlTcpListener.Close;
+begin
+  SfmlTcpListenerClose(FHandle);
 end;
 
 function TSfmlTcpListener.Accept(
@@ -1536,6 +1646,12 @@ begin
   Result := SfmlTcpSocketSend(FHandle, Data, Size);
 end;
 
+function TSfmlTcpSocket.SendPartial(Data: Pointer; Size: NativeUInt;
+  out Sent: NativeUInt): TSfmlSocketStatus;
+begin
+  Result := SfmlTcpSocketSendPartial(FHandle, Data, Size, Sent);
+end;
+
 function TSfmlTcpSocket.SendPacket(Packet: PSfmlPacket): TSfmlSocketStatus;
 begin
   Result := SfmlTcpSocketSendPacket(FHandle, Packet);
@@ -1552,6 +1668,11 @@ end;
 constructor TSfmlUdpSocket.Create;
 begin
   FHandle := SfmlUdpSocketCreate;
+end;
+
+class function TSfmlUdpSocket.AnyPort: Word;
+begin
+  Result := SfmlUdpSocketAnyPort;
 end;
 
 destructor TSfmlUdpSocket.Destroy;
@@ -1649,6 +1770,7 @@ begin
       SfmlFtpDirectoryResponseGetStatus := BindFunction('sfFtpDirectoryResponse_getStatus');
       SfmlFtpDirectoryResponseGetMessage := BindFunction('sfFtpDirectoryResponse_getMessage');
       SfmlFtpDirectoryResponseGetDirectory := BindFunction('sfFtpDirectoryResponse_getDirectory');
+      SfmlFtpDirectoryResponseGetDirectoryUnicode := BindFunction('sfFtpDirectoryResponse_getDirectoryUnicode');
       SfmlFtpResponseDestroy := BindFunction('sfFtpResponse_destroy');
       SfmlFtpResponseIsOk := BindFunction('sfFtpResponse_isOk');
       SfmlFtpResponseGetStatus := BindFunction('sfFtpResponse_getStatus');
@@ -1701,6 +1823,7 @@ begin
       SfmlPacketAppend := BindFunction('sfPacket_append');
       SfmlPacketClear := BindFunction('sfPacket_clear');
       SfmlPacketGetData := BindFunction('sfPacket_getData');
+      SfmlPacketGetReadPosition := BindFunction('sfPacket_getReadPosition');
       SfmlPacketGetDataSize := BindFunction('sfPacket_getDataSize');
       SfmlPacketEndOfPacket := BindFunction('sfPacket_endOfPacket');
       SfmlPacketCanRead := BindFunction('sfPacket_canRead');
@@ -1711,6 +1834,8 @@ begin
       SfmlPacketReadUint16 := BindFunction('sfPacket_readUint16');
       SfmlPacketReadInt32 := BindFunction('sfPacket_readInt32');
       SfmlPacketReadUint32 := BindFunction('sfPacket_readUint32');
+      SfmlPacketReadInt64 := BindFunction('sfPacket_readInt64');
+      SfmlPacketReadUint64 := BindFunction('sfPacket_readUint64');
       SfmlPacketReadFloat := BindFunction('sfPacket_readFloat');
       SfmlPacketReadDouble := BindFunction('sfPacket_readDouble');
       SfmlPacketReadString := BindFunction('sfPacket_readString');
@@ -1722,6 +1847,8 @@ begin
       SfmlPacketWriteUint16 := BindFunction('sfPacket_writeUint16');
       SfmlPacketWriteInt32 := BindFunction('sfPacket_writeInt32');
       SfmlPacketWriteUint32 := BindFunction('sfPacket_writeUint32');
+      SfmlPacketWriteInt64 := BindFunction('sfPacket_writeInt64');
+      SfmlPacketWriteUint64 := BindFunction('sfPacket_writeUint64');
       SfmlPacketWriteFloat := BindFunction('sfPacket_writeFloat');
       SfmlPacketWriteDouble := BindFunction('sfPacket_writeDouble');
       SfmlPacketWriteString := BindFunction('sfPacket_writeString');
@@ -1745,8 +1872,10 @@ begin
       SfmlTcpListenerSetBlocking := BindFunction('sfTcpListener_setBlocking');
       SfmlTcpListenerIsBlocking := BindFunction('sfTcpListener_isBlocking');
       SfmlTcpListenerGetLocalPort := BindFunction('sfTcpListener_getLocalPort');
+      SfmlTcpListenerAnyPort := BindFunction('sfTcpListener_anyPort');
       SfmlTcpListenerListen := BindFunction('sfTcpListener_listen');
       SfmlTcpListenerAccept := BindFunction('sfTcpListener_accept');
+      SfmlTcpListenerClose := BindFunction('sfTcpListener_close');
       SfmlTcpSocketCreate := BindFunction('sfTcpSocket_create');
       SfmlTcpSocketDestroy := BindFunction('sfTcpSocket_destroy');
       SfmlTcpSocketSetBlocking := BindFunction('sfTcpSocket_setBlocking');
@@ -1757,6 +1886,7 @@ begin
       SfmlTcpSocketConnect := BindFunction('sfTcpSocket_connect');
       SfmlTcpSocketDisconnect := BindFunction('sfTcpSocket_disconnect');
       SfmlTcpSocketSend := BindFunction('sfTcpSocket_send');
+      SfmlTcpSocketSendPartial := BindFunction('sfTcpSocket_sendPartial');
       SfmlTcpSocketReceive := BindFunction('sfTcpSocket_receive');
       SfmlTcpSocketSendPacket := BindFunction('sfTcpSocket_sendPacket');
       SfmlTcpSocketReceivePacket := BindFunction('sfTcpSocket_receivePacket');
@@ -1765,6 +1895,7 @@ begin
       SfmlUdpSocketSetBlocking := BindFunction('sfUdpSocket_setBlocking');
       SfmlUdpSocketIsBlocking := BindFunction('sfUdpSocket_isBlocking');
       SfmlUdpSocketGetLocalPort := BindFunction('sfUdpSocket_getLocalPort');
+      SfmlUdpSocketAnyPort := BindFunction('sfUdpSocket_anyPort');
       SfmlUdpSocketBind := BindFunction('sfUdpSocket_bind');
       SfmlUdpSocketUnbind := BindFunction('sfUdpSocket_unbind');
       SfmlUdpSocketSend := BindFunction('sfUdpSocket_send');

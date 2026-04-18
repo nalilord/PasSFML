@@ -42,6 +42,8 @@ const
   CSFML_VERSION_PATCH = 0;
 
 type
+  TSfmlBool = Boolean;
+
   // opaque structures
   TSfmlBufferRecord = record end;
   TSfmlClockRecord = record end;
@@ -150,13 +152,14 @@ type
   TSfmlBufferDestroy = procedure (Buffer: PSfmlBuffer); cdecl;
   TSfmlBufferGetSize = function (const Buffer: PSfmlBuffer): NativeUInt; cdecl;
   TSfmlBufferGetData = function (const Buffer: PSfmlBuffer): PByte; cdecl;
+  TSfmlFree = procedure (Ptr: Pointer); cdecl;
 
   TSfmlClockCreate = function : PSfmlClock; cdecl;
   TSfmlClockCopy = function (const Clock: PSfmlClock): PSfmlClock; cdecl;
   TSfmlClockDestroy = procedure (Clock: PSfmlClock); cdecl;
   TSfmlClockGetElapsedTime = function (const Clock: PSfmlClock): TSfmlTime; cdecl;
   TSfmlClockRestart = function (Clock: PSfmlClock): TSfmlTime; cdecl;
-  TSfmlClockIsRunning = function (const Clock: PSfmlClock): LongBool; cdecl;
+  TSfmlClockIsRunning = function (const Clock: PSfmlClock): TSfmlBool; cdecl;
   TSfmlClockStart = procedure (Clock: PSfmlClock); cdecl;
   TSfmlClockStop = procedure (Clock: PSfmlClock); cdecl;
   TSfmlClockReset = function (Clock: PSfmlClock): TSfmlTime; cdecl;
@@ -190,6 +193,7 @@ var
   SfmlBufferDestroy: TSfmlBufferDestroy;
   SfmlBufferGetSize: TSfmlBufferGetSize;
   SfmlBufferGetData: TSfmlBufferGetData;
+  SfmlFree: TSfmlFree;
 
   SfmlClockCreate: TSfmlClockCreate;
   SfmlClockCopy: TSfmlClockCopy;
@@ -234,11 +238,12 @@ const
   procedure SfmlBufferDestroy(Buffer: PSfmlBuffer); cdecl; external CSfmlSystemLibrary name 'sfBuffer_destroy';
   function SfmlBufferGetSize(const Buffer: PSfmlBuffer): NativeUInt; cdecl; external CSfmlSystemLibrary name 'sfBuffer_getSize';
   function SfmlBufferGetData(const Buffer: PSfmlBuffer): PByte; cdecl; external CSfmlSystemLibrary name 'sfBuffer_getData';
+  procedure SfmlFree(Ptr: Pointer); cdecl; external CSfmlSystemLibrary name 'sfFree';
 
   function SfmlClockCreate: PSfmlClock; cdecl; external CSfmlSystemLibrary name 'sfClock_create';
   function SfmlClockCopy(const Clock: PSfmlClock): PSfmlClock; cdecl; external CSfmlSystemLibrary name 'sfClock_copy';
   procedure SfmlClockDestroy(Clock: PSfmlClock); cdecl; external CSfmlSystemLibrary name 'sfClock_destroy';
-  function SfmlClockIsRunning(const Clock: PSfmlClock): LongBool; cdecl; external CSfmlSystemLibrary name 'sfClock_isRunning';
+  function SfmlClockIsRunning(const Clock: PSfmlClock): TSfmlBool; cdecl; external CSfmlSystemLibrary name 'sfClock_isRunning';
   procedure SfmlClockStart(Clock: PSfmlClock); cdecl; external CSfmlSystemLibrary name 'sfClock_start';
   procedure SfmlClockStop(Clock: PSfmlClock); cdecl; external CSfmlSystemLibrary name 'sfClock_stop';
 {$IFNDEF INT64RETURNWORKAROUND}
@@ -331,6 +336,7 @@ type
 {$ENDIF}
 
 function SfmlTime(MicroSeconds: Int64): TSfmlTime;
+function SfmlVector2u(X, Y: Cardinal): TSfmlVector2u;
 function SfmlVector2f(X, Y: Single): TSfmlVector2f;
 function SfmlVector3f(X, Y, Z: Single): TSfmlVector3f;
 
@@ -500,6 +506,13 @@ end;
 function SfmlTime(MicroSeconds: Int64): TSfmlTime;
 begin
   Result.MicroSeconds := MicroSeconds;
+end;
+
+
+function SfmlVector2u(X, Y: Cardinal): TSfmlVector2u;
+begin
+  Result.X := X;
+  Result.Y := Y;
 end;
 
 
@@ -841,6 +854,7 @@ begin
       SfmlBufferDestroy := BindFunction('sfBuffer_destroy');
       SfmlBufferGetSize := BindFunction('sfBuffer_getSize');
       SfmlBufferGetData := BindFunction('sfBuffer_getData');
+      SfmlFree := BindFunction('sfFree');
       SfmlClockCreate := BindFunction('sfClock_create');
       SfmlClockCopy := BindFunction('sfClock_copy');
       SfmlClockDestroy := BindFunction('sfClock_destroy');

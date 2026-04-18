@@ -61,3 +61,11 @@ __history/
 *.sh
 *-src
 Native
+
+# Ship the CSFML runtimes used by the Pascal binaries.
+!Binaries/Win32/
+!Binaries/Win64/
+!Binaries/Win32/csfml-*-3.dll
+!Binaries/Win64/csfml-*-3.dll
+Binaries/Win32/dunit.ini
+Binaries/Win64/dunit.ini
