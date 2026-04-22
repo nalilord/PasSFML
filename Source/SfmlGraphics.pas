@@ -676,7 +676,7 @@ type
   TSfmlTextureGenerateMipmap = function (Texture: PSfmlTexture): TSfmlBool; cdecl;
   TSfmlTextureSwap = procedure (Left, Right: PSfmlTexture); cdecl;
   TSfmlTextureGetNativeHandle = function (const Texture: PSfmlTexture): Cardinal; cdecl;
-  TSfmlTextureBind = procedure (const Texture: PSfmlTexture); cdecl;
+  TSfmlTextureBind = procedure (const Texture: PSfmlTexture; CoordinateType: TSfmlCoordinateType); cdecl;
   TsfmlTextureGetMaximumSize = function : Cardinal; cdecl;
 
   TSfmlTransformFromMatrix = function (a00, a01, a02, a10, a11, a12, a20, a21, a22: Single): TSfmlTransform; cdecl;
@@ -1549,7 +1549,7 @@ const
   procedure SfmlRenderWindowSetSize(RenderWindow: PSfmlRenderWindow; Size: TSfmlVector2u); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setSize';
   procedure SfmlRenderWindowSetTitle(RenderWindow: PSfmlRenderWindow; const Title: PAnsiChar); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setTitle';
   procedure SfmlRenderWindowSetUnicodeTitle(RenderWindow: PSfmlRenderWindow; const Title: PUCS4Char); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setUnicodeTitle';
-  procedure SfmlRenderWindowSetIcon(RenderWindow: PSfmlRenderWindow; Width, Height: Cardinal; const Pixels: PByte); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setIcon';
+  procedure SfmlRenderWindowSetIcon(RenderWindow: PSfmlRenderWindow; Size: TSfmlVector2u; const Pixels: PByte); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setIcon';
   procedure SfmlRenderWindowSetVisible(RenderWindow: PSfmlRenderWindow; Visible: TSfmlBool); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setVisible';
   procedure SfmlRenderWindowSetVerticalSyncEnabled(RenderWindow: PSfmlRenderWindow; Enabled: TSfmlBool); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setVerticalSyncEnabled';
   procedure SfmlRenderWindowSetMouseCursorVisible(RenderWindow: PSfmlRenderWindow; Show: TSfmlBool); cdecl; external CSfmlGraphicsLibrary name 'sfRenderWindow_setMouseCursorVisible';
@@ -1762,7 +1762,7 @@ const
   function SfmlTextureGenerateMipmap(Texture: PSfmlTexture): TSfmlBool; cdecl; external CSfmlGraphicsLibrary name 'sfTexture_generateMipmap';
   procedure SfmlTextureSwap(Left, Right: PSfmlTexture); cdecl; external CSfmlGraphicsLibrary name 'sfTexture_swap';
   function SfmlTextureGetNativeHandle(const Texture: PSfmlTexture): Cardinal; cdecl; external CSfmlGraphicsLibrary name 'sfTexture_getNativeHandle';
-  procedure SfmlTextureBind(const Texture: PSfmlTexture); cdecl; external CSfmlGraphicsLibrary name 'sfTexture_bind';
+  procedure SfmlTextureBind(const Texture: PSfmlTexture; CoordinateType: TSfmlCoordinateType); cdecl; external CSfmlGraphicsLibrary name 'sfTexture_bind';
   function sfmlTextureGetMaximumSize: Cardinal; cdecl; external CSfmlGraphicsLibrary name 'sfTexture_getMaximumSize';
 {$IFNDEF INT64RETURNWORKAROUND}
   function SfmlTextureGetSize(const Texture: PSfmlTexture): TSfmlVector2u; cdecl; external CSfmlGraphicsLibrary name 'sfTexture_getSize';
@@ -2151,7 +2151,7 @@ type
     function CopyToImage: TSfmlImage; overload;
     function Resize(Size: TSfmlVector2u): Boolean;
     function ResizeSrgb(Size: TSfmlVector2u): Boolean;
-    procedure Bind;
+    procedure Bind(CoordinateType: TSfmlCoordinateType);
 
     procedure UpdateFromTexture(const Texture: TSfmlTexture; X, Y: Cardinal); overload;
     procedure UpdateFromTexture(const Texture: PSfmlTexture; X, Y: Cardinal); overload;
@@ -2636,7 +2636,7 @@ type
     procedure ResetGLStates; override;
 
     procedure SetFramerateLimit(Limit: Cardinal);
-    procedure SetIcon(Width, Height: Cardinal; const Pixels: PByte);
+    procedure SetIcon(Size: TSfmlVector2u; const Pixels: PByte);
     procedure SetJoystickThreshold(Threshold: Single);
     procedure SetKeyRepeatEnabled(Enabled: Boolean);
     procedure SetMouseCursor(const Cursor: TSfmlCursor);
@@ -4184,10 +4184,9 @@ begin
   SfmlRenderWindowSetFramerateLimit(FHandle, Limit);
 end;
 
-procedure TSfmlRenderWindow.SetIcon(Width, Height: Cardinal;
-  const Pixels: PByte);
+procedure TSfmlRenderWindow.SetIcon(Size: TSfmlVector2u; const Pixels: PByte);
 begin
-  SfmlRenderWindowSetIcon(FHandle, Width, Height, Pixels);
+  SfmlRenderWindowSetIcon(FHandle, Size, Pixels);
 end;
 
 procedure TSfmlRenderWindow.SetJoystickThreshold(Threshold: Single);
@@ -5087,9 +5086,9 @@ begin
   inherited;
 end;
 
-procedure TSfmlTexture.Bind;
+procedure TSfmlTexture.Bind(CoordinateType: TSfmlCoordinateType);
 begin
-  SfmlTextureBind(FHandle);
+  SfmlTextureBind(FHandle, CoordinateType);
 end;
 
 function TSfmlTexture.Copy: TSfmlTexture;

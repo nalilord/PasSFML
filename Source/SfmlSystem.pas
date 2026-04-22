@@ -123,8 +123,8 @@ type
     {$ENDIF}
   end;
 
-  TSfmlInputStreamReadFunc = function (Data: Pointer; Size: Int64; UserData: Pointer): Int64; cdecl;
-  TSfmlInputStreamSeekFunc = function (Position: Int64; UserData: Pointer): Int64; cdecl;
+  TSfmlInputStreamReadFunc = function (Data: Pointer; Size: NativeUInt; UserData: Pointer): Int64; cdecl;
+  TSfmlInputStreamSeekFunc = function (Position: NativeUInt; UserData: Pointer): Int64; cdecl;
   TSfmlInputStreamTellFunc = function (UserData: Pointer): Int64; cdecl;
   TSfmlInputStreamGetSizeFunc = function (UserData: Pointer): Int64; cdecl;
 

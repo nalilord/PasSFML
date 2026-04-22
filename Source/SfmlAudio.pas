@@ -64,6 +64,7 @@ type
     OuterAngle: Single;
     OuterGain: Single;
   end;
+  TSfmlListenerCone = TSfmlSoundSourceCone;
 
   TSfmlEffectProcessor = procedure (const InputFrames: PSingle;
     var InputFrameCount: Cardinal; OutputFrames: PSingle;
@@ -112,8 +113,8 @@ type
   TSfmlListenerGetUpVector = function : TSfmlVector3f; cdecl;
   TSfmlListenerSetVelocity = procedure (Velocity: TSfmlVector3f); cdecl;
   TSfmlListenerGetVelocity = function : TSfmlVector3f; cdecl;
-  TSfmlListenerSetCone = procedure (Cone: TSfmlSoundSourceCone); cdecl;
-  TSfmlListenerGetCone = function : TSfmlSoundSourceCone; cdecl;
+  TSfmlListenerSetCone = procedure (Cone: TSfmlListenerCone); cdecl;
+  TSfmlListenerGetCone = function : TSfmlListenerCone; cdecl;
 
   TSfmlMusicCreateFromFile = function (const FileName: PAnsiChar): PSfmlMusic; cdecl;
   TSfmlMusicCreateFromMemory = function (const Data: Pointer; SizeInBytes: NativeUInt): PSfmlMusic; cdecl;
@@ -271,7 +272,7 @@ type
   TSfmlSoundBufferDestroy = procedure (SoundBuffer: PSfmlSoundBuffer); cdecl;
   TSfmlSoundBufferSaveToFile = function (const SoundBuffer: PSfmlSoundBuffer; const FileName: PAnsiChar): TSfmlBool; cdecl;
   TSfmlSoundBufferGetSamples = function (const SoundBuffer: PSfmlSoundBuffer): PSmallInt; cdecl;
-  TSfmlSoundBufferGetSampleCount = function (const SoundBuffer: PSfmlSoundBuffer): NativeUInt; cdecl;
+  TSfmlSoundBufferGetSampleCount = function (const SoundBuffer: PSfmlSoundBuffer): UInt64; cdecl;
   TSfmlSoundBufferGetSampleRate = function (const SoundBuffer: PSfmlSoundBuffer): Cardinal; cdecl;
   TSfmlSoundBufferGetChannelCount = function (const SoundBuffer: PSfmlSoundBuffer): Cardinal; cdecl;
   TSfmlSoundBufferGetChannelMap = function (const SoundBuffer: PSfmlSoundBuffer; Count: PNativeUInt): PSfmlSoundChannel; cdecl;
@@ -515,8 +516,8 @@ var
   function SfmlListenerGetUpVector: TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfListener_getUpVector';
   procedure SfmlListenerSetVelocity(Velocity: TSfmlVector3f); cdecl; external CSfmlAudioLibrary name 'sfListener_setVelocity';
   function SfmlListenerGetVelocity: TSfmlVector3f; cdecl; external CSfmlAudioLibrary name 'sfListener_getVelocity';
-  procedure SfmlListenerSetCone(Cone: TSfmlSoundSourceCone); cdecl; external CSfmlAudioLibrary name 'sfListener_setCone';
-  function SfmlListenerGetCone: TSfmlSoundSourceCone; cdecl; external CSfmlAudioLibrary name 'sfListener_getCone';
+  procedure SfmlListenerSetCone(Cone: TSfmlListenerCone); cdecl; external CSfmlAudioLibrary name 'sfListener_setCone';
+  function SfmlListenerGetCone: TSfmlListenerCone; cdecl; external CSfmlAudioLibrary name 'sfListener_getCone';
 
   function SfmlMusicCreateFromFile(const FileName: PAnsiChar): PSfmlMusic; cdecl; external CSfmlAudioLibrary name 'sfMusic_createFromFile';
   function SfmlMusicCreateFromMemory(const data: Pointer; SizeInBytes: NativeUInt): PSfmlMusic; cdecl; external CSfmlAudioLibrary name 'sfMusic_createFromMemory';
@@ -682,7 +683,7 @@ var
   procedure SfmlSoundBufferDestroy(SoundBuffer: PSfmlSoundBuffer); cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_destroy';
   function SfmlSoundBufferSaveToFile(const SoundBuffer: PSfmlSoundBuffer; const FileName: PAnsiChar): TSfmlBool; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_saveToFile';
   function SfmlSoundBufferGetSamples(const SoundBuffer: PSfmlSoundBuffer): PSmallInt; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_getSamples';
-  function SfmlSoundBufferGetSampleCount(const SoundBuffer: PSfmlSoundBuffer): NativeUInt; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_getSampleCount';
+  function SfmlSoundBufferGetSampleCount(const SoundBuffer: PSfmlSoundBuffer): UInt64; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_getSampleCount';
   function SfmlSoundBufferGetSampleRate(const SoundBuffer: PSfmlSoundBuffer): Cardinal; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_getSampleRate';
   function SfmlSoundBufferGetChannelCount(const SoundBuffer: PSfmlSoundBuffer): Cardinal; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_getChannelCount';
   function SfmlSoundBufferGetChannelMap(const SoundBuffer: PSfmlSoundBuffer; Count: PNativeUInt): PSfmlSoundChannel; cdecl; external CSfmlAudioLibrary name 'sfSoundBuffer_getChannelMap';
@@ -842,7 +843,7 @@ type
   private
     FHandle: PSfmlSoundBuffer;
     constructor Create(Handle: PSfmlSoundBuffer); overload;
-    function GetSampleCount: NativeUInt;
+    function GetSampleCount: UInt64;
     function GetSampleRate: Cardinal;
     function GetChannelCount: Cardinal;
     function GetDuration: TSfmlTime;
@@ -850,10 +851,10 @@ type
     constructor Create(const FileName: AnsiString); overload;
     constructor Create(const Data: Pointer; SizeInBytes: NativeUInt); overload;
     constructor Create(Stream: PSfmlInputStream); overload;
-    constructor Create(const Samples: PSmallInt; SampleCount: NativeUInt;
+    constructor Create(const Samples: PSmallInt; SampleCount: UInt64;
       ChannelCount, SampleRate: Cardinal; ChannelMapData: PSfmlSoundChannel = nil;
       ChannelMapSize: NativeUInt = 0); overload;
-    constructor Create(const Samples: PSmallInt; SampleCount: NativeUInt;
+    constructor Create(const Samples: PSmallInt; SampleCount: UInt64;
       ChannelCount, SampleRate: Cardinal;
       const ChannelMap: array of TSfmlSoundChannel); overload;
     destructor Destroy; override;
@@ -868,7 +869,7 @@ type
     property ChannelCount: Cardinal read GetChannelCount;
     property Duration: TSfmlTime read GetDuration;
     property Handle: PSfmlSoundBuffer read FHandle;
-    property SampleCount: NativeUInt read GetSampleCount;
+    property SampleCount: UInt64 read GetSampleCount;
     property SampleRate: Cardinal read GetSampleRate;
   end;
 
@@ -1334,7 +1335,7 @@ begin
 end;
 
 constructor TSfmlSoundBuffer.Create(const Samples: PSmallInt;
-  SampleCount: NativeUInt; ChannelCount, SampleRate: Cardinal;
+  SampleCount: UInt64; ChannelCount, SampleRate: Cardinal;
   ChannelMapData: PSfmlSoundChannel; ChannelMapSize: NativeUInt);
 begin
   FHandle := SfmlSoundBufferCreateFromSamples(Samples, SampleCount,
@@ -1342,7 +1343,7 @@ begin
 end;
 
 constructor TSfmlSoundBuffer.Create(const Samples: PSmallInt;
-  SampleCount: NativeUInt; ChannelCount, SampleRate: Cardinal;
+  SampleCount: UInt64; ChannelCount, SampleRate: Cardinal;
   const ChannelMap: array of TSfmlSoundChannel);
 begin
   if Length(ChannelMap) > 0 then
@@ -1391,7 +1392,7 @@ begin
   Result := SfmlSoundBufferGetDuration(FHandle);
 end;
 
-function TSfmlSoundBuffer.GetSampleCount: NativeUInt;
+function TSfmlSoundBuffer.GetSampleCount: UInt64;
 begin
   Result := SfmlSoundBufferGetSampleCount(FHandle);
 end;

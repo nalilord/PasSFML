@@ -1719,7 +1719,7 @@ var
 begin
   Assert(FileExists(ResourcePath('Sfml.png')));
   Image := TSfmlImage.Create(ResourcePath('Sfml.png'));
-  FSfmlRenderWindow.SetIcon(Image.Size.X, Image.Size.Y, Image.GetPixelsPtr);
+  FSfmlRenderWindow.SetIcon(Image.Size, Image.GetPixelsPtr);
   // TODO: Check results
 end;
 
@@ -2155,7 +2155,7 @@ end;
 
 procedure TestTSfmlTexture.TestBind;
 begin
-  FSfmlTexture.Bind;
+  FSfmlTexture.Bind(sfCoordinateTypePixels);
   // TODO: Check results
 end;
 

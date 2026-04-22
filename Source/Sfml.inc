@@ -75,7 +75,11 @@
 {-$UNDEF RecordOperators}
 
 {$Z4}
-{$A4}
+{$IFDEF CPUX64}
+  {$A8}
+{$ELSE}
+  {$A4}
+{$ENDIF}
 
 {$IFNDEF FPC}
   {$DEFINE INT64RETURNWORKAROUND}

@@ -568,7 +568,7 @@ var
   procedure SfmlWindowSetSize(Window: PSfmlWindow; Size: TSfmlVector2u); cdecl; external CSfmlWindowLibrary name 'sfWindow_setSize';
   procedure SfmlWindowSetTitle(Window: PSfmlWindow; const Title: PAnsiChar); cdecl; external CSfmlWindowLibrary name 'sfWindow_setTitle';
   procedure SfmlWindowSetUnicodeTitle(Window: PSfmlWindow; const Title: PUCS4Char); cdecl; external CSfmlWindowLibrary name 'sfWindow_setUnicodeTitle';
-  procedure SfmlWindowSetIcon(Window: PSfmlWindow; Width, Height: Cardinal; const Pixels: PByte); cdecl; external CSfmlWindowLibrary name 'sfWindow_setIcon';
+  procedure SfmlWindowSetIcon(Window: PSfmlWindow; Size: TSfmlVector2u; const Pixels: PByte); cdecl; external CSfmlWindowLibrary name 'sfWindow_setIcon';
   procedure SfmlWindowSetVisible(Window: PSfmlWindow; Visible: TSfmlBool); cdecl; external CSfmlWindowLibrary name 'sfWindow_setVisible';
   procedure SfmlWindowSetMouseCursorVisible(Window: PSfmlWindow; Visible: TSfmlBool); cdecl; external CSfmlWindowLibrary name 'sfWindow_setMouseCursorVisible';
   procedure SfmlWindowSetMouseCursorGrabbed(Window: PSfmlWindow; Grabbed: TSfmlBool); cdecl; external CSfmlWindowLibrary name 'sfWindow_setMouseCursorGrabbed';
@@ -625,7 +625,7 @@ type
     procedure SetSize(Size: TSfmlVector2u);
     procedure SetTitle(const Title: AnsiString); overload;
     procedure SetTitle(const Title: UnicodeString); overload;
-    procedure SetIcon(Width, Height: Cardinal; const Pixels: PByte);
+    procedure SetIcon(Size: TSfmlVector2u; const Pixels: PByte);
     procedure SetVisible(Visible: Boolean);
     procedure SetVerticalSyncEnabled(Enabled: Boolean);
     procedure SetMouseCursorVisible(Visible: Boolean);
@@ -678,7 +678,7 @@ type
     function WaitEvent(Timeout: TSfmlTime; out Event: TSfmlEvent): Boolean;
     procedure SetTitle(const Title: AnsiString); overload;
     procedure SetTitle(const Title: UnicodeString); overload;
-    procedure SetIcon(Width, Height: Cardinal; const Pixels: PByte);
+    procedure SetIcon(Size: TSfmlVector2u; const Pixels: PByte);
     procedure SetVisible(Visible: Boolean);
     procedure SetVerticalSyncEnabled(Enabled: Boolean);
     procedure SetMouseCursorVisible(Visible: Boolean);
@@ -966,9 +966,9 @@ begin
   SfmlWindowSetFramerateLimit(FHandle, Limit);
 end;
 
-procedure TSfmlWindow.SetIcon(Width, Height: Cardinal; const Pixels: PByte);
+procedure TSfmlWindow.SetIcon(Size: TSfmlVector2u; const Pixels: PByte);
 begin
-  SfmlWindowSetIcon(FHandle, Width, Height, Pixels);
+  SfmlWindowSetIcon(FHandle, Size, Pixels);
 end;
 
 procedure TSfmlWindow.SetJoystickThreshold(Threshold: Single);
